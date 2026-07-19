@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ site.title }} | {{ page.title }}</title>
+    <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="header-right">
+            <div class="brand">
+                <h1>SecretMyth</h1>
+                <p>An Anomaly..</p>
+            </div>
+            <button id="theme-toggle" aria-label="Toggle Dark/Light Mode">
+                <span id="theme-icon">🌙</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="content">
+        {{ content }}
+    </main>
+
+    <footer class="site-footer">
+        <div class="social-links">
+            <a href="https://x.com/thesecretmyth" target="_blank" rel="noopener noreferrer">X</a>
+            <a href="https://github.com/thesecretmyth" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+    </footer>
+
+    <script>
+        const toggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+
+        if (currentTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeIcon.textContent = '☀️';
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            let theme = 'dark';
+            themeIcon.textContent = '🌙';
+
+            if (document.body.classList.contains('light-mode')) {
+                theme = 'light';
+                themeIcon.textContent = '☀️';
+            }
+            localStorage.setItem('theme', theme);
+        });
+    </script>
+</body>
+
+</html>

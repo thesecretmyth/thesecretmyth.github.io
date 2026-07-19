@@ -1,0 +1,6 @@
+title: SecretMyth
+description: An Anomaly..
+url: "https://secretmyth.blog"
+markdown: kramdown
+theme: null
+permalink: /:categories/:title/

@@ -1,0 +1,152 @@
+:root {
+    --bg-color: #0d1117;
+    --text-color: #c9d1d9;
+    --accent-color: #58a6ff;
+    --code-bg: #1f2428;
+    --border-color: #30363d;
+}
+
+body.light-mode {
+    --bg-color: #ffffff;
+    --text-color: #24292f;
+    --accent-color: #0969da;
+    --code-bg: #f6f8fa;
+    --border-color: #d0d7de;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header: Top Right Alignment */
+.site-header {
+    padding: 20px 40px;
+    display: flex;
+    justify-content: flex-end;
+    /* Pushes content to the right */
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    text-align: right;
+}
+
+.brand h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+}
+
+.brand p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+#theme-toggle {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 0;
+}
+
+/* Main Content */
+.content {
+    flex: 1;
+    /* Pushes footer down */
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 40px 20px;
+    box-sizing: border-box;
+}
+
+.content img {
+    max-width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+pre,
+code {
+    background-color: var(--code-bg);
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+}
+
+pre {
+    padding: 15px;
+    overflow-x: auto;
+}
+
+code {
+    padding: 2px 5px;
+}
+
+pre code {
+    padding: 0;
+}
+
+a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Post List (Homepage) */
+.post-list {
+    list-style: none;
+    padding: 0;
+}
+
+.post-list li {
+    margin-bottom: 25px;
+}
+
+.post-meta {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    display: block;
+}
+
+.post-link {
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.tag {
+    background: var(--code-bg);
+    border: 1px solid var(--border-color);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    margin-right: 5px;
+}
+
+/* Footer: Bottom Right Alignment */
+.site-footer {
+    padding: 20px 40px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.social-links a {
+    margin-left: 20px;
+    font-weight: bold;
+}

@@ -1,0 +1,27 @@
+---
+layout: default
+title: Home
+---
+<div class="home">
+    <ul class="post-list">
+        {% for post in site.posts %}
+        <li>
+            <span class="post-meta">{{ post.date | date: "%b %d, %Y" }}</span>
+            <h3>
+                <a class="post-link" href="{{ post.url | relative_url }}">
+                    {% if post.url contains 'htb-logging' %}
+                    HackTheBox: Logging
+                    {% else %}
+                    {{ post.title | escape }}
+                    {% endif %}
+                </a>
+            </h3>
+            <div class="tags">
+                {% for cat in post.categories %}
+                <span class="tag">{{ cat }}</span>
+                {% endfor %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>

