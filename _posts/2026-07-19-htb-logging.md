@@ -11,7 +11,7 @@
 
 ## 1.1 Port Scan
 
-```zsh
+```bash
 PORT     STATE SERVICE       REASON          VERSION
 53/tcp   open  domain        syn-ack ttl 127 Simple DNS Plus
 80/tcp   open  http          syn-ack ttl 127 Microsoft IIS httpd 10.0
@@ -880,7 +880,7 @@ To ensure the rogue WSUS server handles the incoming HTTP Host headers correctly
 
 We then stage a Netcat listener to catch the final SYSTEM callback.
 
-```zsh
+```bash
 ➜ rlwrap -cAr ncat -lnvp 9295
 ```
 
@@ -932,7 +932,7 @@ DC01
 
 A quick enumeration of the `C:\Users` directory reveals that the final objective is not in the default Administrator folder. Instead, we locate and retrieve the root flag from `toby.brynleigh`'s Desktop.
 
-```zsh
+```bash
 PS C:\Users> tree . /a /f
 Folder PATH listing
 Volume serial number is C007-7498
