@@ -58,7 +58,7 @@ a:hover { text-decoration: underline; }
     width: 100%;
     padding: 0 1.25rem 2rem;
 }
-.site-header .wrap { padding-bottom: 0; }
+.site-header .wrap { padding-bottom: 0; max-width: none; }
 
 h1.site-title {
     margin: 0 0 .3rem;
@@ -131,18 +131,6 @@ h1.site-title {
 }
 .site-header, .wrap { position: relative; }
 .site-header .wrap > * { position: relative; z-index: 1; }
-
-/* ---- about notice box ---- */
-.notice {
-    margin: 0 0 2rem;
-    padding: 0.8rem 1.1rem;
-    border-left: 3px solid var(--phos);
-    background: rgba(255, 255, 255, 0.03);
-    font-size: 0.82rem;
-    line-height: 1.65;
-    color: var(--fg-2);
-    white-space: pre-line;
-}
 
 /* ---- post list (warez drops style) ---- */
 .drops { list-style: none; padding: 0; margin: 0; }
@@ -267,11 +255,12 @@ figcaption { color: var(--fg-3); font-size: 0.75rem; margin-top: 0.4rem; text-al
 
 hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 
-/* ---- right sidebar: brand + toc + socials ---- */
+/* ---- right sidebar: brand + toc ---- */
 .side {
     position: fixed;
     top: 1.2rem;
-    right: 1rem;
+    right: 0;
+    padding-right: 0.6rem;
     width: 220px;
     display: flex;
     flex-direction: column;
@@ -299,14 +288,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
     background: var(--panel);
     padding: 0.35rem;
 }
-.side-social {
-    display: flex;
-    gap: 0.8rem;
-    font-size: 0.72rem;
-    margin-top: 0.3rem;
-}
-.side-social a { color: var(--fg-2); text-decoration: none; }
-.side-social a:hover { color: var(--phos); text-decoration: underline; }
 @media (max-width: 1150px) {
     /* no room for a side gutter → stack it inline above the post */
     .side {
@@ -318,6 +299,13 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
         align-items: baseline;
         gap: 0.6rem 1rem;
     }
+    /* ...but the brand word detaches and stays clickable while scrolling */
+    .side-brand {
+        position: fixed;
+        top: 1.2rem;
+        right: 1rem;
+        z-index: 30;
+    }
     .toc { max-height: none; width: 100%; }
 }
 
@@ -328,10 +316,10 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
     right: 1rem;
     display: flex;
     gap: 0.8rem;
-    font-size: 0.72rem;
+    font-size: 0.9rem;
     z-index: 30;
 }
-.corner-social a { color: var(--fg-2); text-decoration: none; }
+.corner-social a { color: var(--fg-1); text-decoration: none; }
 .corner-social a:hover { color: var(--phos); text-decoration: underline; }
 .toc-toggle {
     display: flex;
