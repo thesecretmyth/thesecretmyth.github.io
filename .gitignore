@@ -1,0 +1,9 @@
+Gemfile
+Gemfile.lock
+
+# Jekyll build output (generated, never commit)
+_site/
+
+# Ignored Folders
+**/__pycache__/
+__pycache__/
