@@ -1,0 +1,122 @@
+---
+layout: default
+---
+<article class="post">
+    <header class="post-header">
+        <h1 class="post-title">{{ page.title }}</h1>
+        <div class="post-meta">
+            <span class="post-date">{{ page.date | date: "%b %d, %Y" }}</span>
+            <div class="tags">
+                {% for tag in page.tags %}
+                {% if page.tag_anchors[tag] %}
+                <a class="tag" href="{{ page.tag_anchors[tag] }}">{{ tag }}</a>
+                {% else %}
+                <a class="tag" href="/tags/{{ tag | slugify }}/">{{ tag }}</a>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </header>
+
+    <div class="post-body">
+        <aside class="side">
+            <a class="side-brand" href="{{ '/' | relative_url }}">secretmyth</a>
+            <span class="side-anomaly">an anomaly</span>
+
+            <div class="toc" id="toc">
+                <button class="toc-toggle" id="toc-toggle" type="button" aria-expanded="true" aria-controls="toc-list-wrap">
+                    <span>Sections</span>
+                    <span class="toc-arrow" aria-hidden="true">▾</span>
+                </button>
+                <nav class="toc-list-wrap" id="toc-list-wrap">
+                    <ul class="toc-list" id="toc-list"></ul>
+                </nav>
+            </div>
+
+            <div class="side-social">
+                <a href="https://x.com/thesecretmyth" target="_blank" rel="noopener">x</a>
+                <a href="https://github.com/thesecretmyth" target="_blank" rel="noopener">github</a>
+                <a href="mailto:thesecretmyth@proton.me">email</a>
+            </div>
+        </aside>
+
+        <div class="post-content">
+            {{ content }}
+        </div>
+    </div>
+</article>
+
+<script>
+    (function () {
+        var toc = document.getElementById('toc');
+        var list = document.getElementById('toc-list');
+        var content = document.querySelector('.post-content');
+        if (!toc || !list || !content) return;
+
+        var headings = content.querySelectorAll('h1[id], h2[id]');
+        if (headings.length === 0) {
+            toc.style.display = 'none';
+            return;
+        }
+
+        // Build a nested TOC: h1 = top-level entry, h2 nested underneath it.
+        var currentH1Item = null;
+        var currentH1List = null;
+
+        Array.prototype.forEach.call(headings, function (h) {
+            var a = document.createElement('a');
+            a.href = '#' + h.id;
+            a.textContent = h.textContent.trim();
+            a.setAttribute('data-target', h.id);
+
+            var li = document.createElement('li');
+
+            if (h.tagName === 'H1') {
+                li.appendChild(a);
+                list.appendChild(li);
+                currentH1Item = li;
+                currentH1List = null;
+            } else if (currentH1Item) {
+                if (!currentH1List) {
+                    currentH1List = document.createElement('ul');
+                    currentH1Item.appendChild(currentH1List);
+                }
+                li.appendChild(a);
+                currentH1List.appendChild(li);
+            }
+        });
+
+        // Scrollspy: highlight the section currently in view.
+        var links = toc.querySelectorAll('a[data-target]');
+        var targets = Array.prototype.slice.call(headings);
+
+        function onScroll() {
+            var current = null;
+            var offset = 60;
+            for (var i = 0; i < targets.length; i++) {
+                if (targets[i].getBoundingClientRect().top <= offset) {
+                    current = targets[i].id;
+                }
+            }
+            Array.prototype.forEach.call(links, function (a) {
+                if (a.getAttribute('data-target') === current) {
+                    a.classList.add('active');
+                } else {
+                    a.classList.remove('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+
+        // Mobile: collapse/expand the sections list.
+        var toggle = document.getElementById('toc-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', function () {
+                var open = toc.classList.toggle('open');
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        }
+    })();
+</script>

@@ -1,0 +1,24 @@
+---
+layout: default
+title: secretmyth
+matrix_rain: true
+matrix_line: true
+---
+<div class="corner-social">
+    <a href="https://x.com/thesecretmyth" target="_blank" rel="noopener">x</a>
+    <a href="https://github.com/thesecretmyth" target="_blank" rel="noopener">github</a>
+    <a href="mailto:thesecretmyth@proton.me">email</a>
+</div>
+<ul class="drops">
+    {% for post in site.posts %}
+    <li>
+        <span class="date">{{ post.date | date: "%Y-%m-%d" }}</span>
+        <a class="title" href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
+        <div class="tags">
+            {% for tag in post.tags %}
+            <a class="tag" href="/tags/{{ tag | slugify }}/">{{ tag }}</a>
+            {% endfor %}
+        </div>
+    </li>
+    {% endfor %}
+</ul>

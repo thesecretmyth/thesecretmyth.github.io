@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ site.title }}{% if page.title and page.title != site.title %} · {{ page.title }}{% endif %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+</head>
+<body>
+    {% if page.matrix_rain %}<canvas id="rain"></canvas>{% endif %}
+
+    <header class="site-header">
+        <div class="wrap">
+            <a class="site-logo-link" href="{{ '/' | relative_url }}" aria-label="secretmyth — home">
+            <svg class="site-logo" viewBox="0 0 290 50" fill="none" role="img" aria-label="secretmyth">
+                <defs>
+                    <filter id="logo-glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/>
+                        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                    <clipPath id="logo-top"><rect x="-10" y="0" width="310" height="25"/></clipPath>
+                    <clipPath id="logo-bot"><rect x="-10" y="25" width="310" height="25"/></clipPath>
+                </defs>
+                <!-- etched shadow copy (offset right) -->
+                <text x="3" y="40" text-anchor="start" font-family="'Share Tech Mono',monospace"
+                      font-size="40" letter-spacing="4" style="fill:var(--bg)" opacity=".6">secretmyth</text>
+                <!-- top-half ghost, accent tinted -->
+                <g clip-path="url(#logo-top)">
+                    <text x="1" y="40" text-anchor="start" font-family="'Share Tech Mono',monospace"
+                          font-size="40" letter-spacing="4" fill="#e4e9ed" opacity=".35">secretmyth</text>
+                </g>
+                <!-- bottom-half ghost, dimmer gray -->
+                <g clip-path="url(#logo-bot)">
+                    <text x="-1" y="40" text-anchor="start" font-family="'Share Tech Mono',monospace"
+                          font-size="40" letter-spacing="4" fill="#8f96a3" opacity=".2">secretmyth</text>
+                </g>
+                <!-- glowing main copy -->
+                <text x="0" y="40" text-anchor="start" font-family="'Share Tech Mono',monospace"
+                      font-size="40" letter-spacing="4" fill="#eef1f4" filter="url(#logo-glow)">secretmyth</text>
+            </svg>
+            </a>
+            <p class="tagline">an anomaly</p>
+
+            {% if page.matrix_line %}
+            <p class="matrix-line" id="matrix-line"><span id="matrix-text"></span><span class="caret"></span></p>
+
+            <script>
+            (function () {
+                var lines = [
+                    "i pwn; and i know things",
+                    "wake up, the flag is waiting.",
+                    "i don't know kung fu — i know kerberos.",
+                    "i dream in ntlm hashes.",
+                    "there is no spoon — only misconfig.",
+                    "follow the white rabbit to the DC.",
+                    "what i know is a drop. what i don't know is an ocean."
+                ];
+                var el = document.getElementById('matrix-text');
+                var li = 0, ci = 0, deleting = false;
+
+                function tick() {
+                    var cur = lines[li];
+                    if (!deleting) {
+                        ci++;
+                        el.textContent = cur.slice(0, ci);
+                        if (ci === cur.length) {
+                            deleting = true;
+                            return setTimeout(tick, 2600);      // hold full line
+                        }
+                        return setTimeout(tick, 55 + Math.random() * 45);
+                    } else {
+                        ci--;
+                        el.textContent = cur.slice(0, ci);
+                        if (ci === 0) {
+                            deleting = false;
+                            li = (li + 1) % lines.length;
+                            return setTimeout(tick, 500);
+                        }
+                        return setTimeout(tick, 22);
+                    }
+                }
+                setTimeout(tick, 400);
+            })();
+            </script>
+            {% endif %}
+
+            <div class="notice">weekend ctf player. not in tech, no degree — learning the hard way: by breaking things.
+hard sci-fi for the brain, perfume for the prose.</div>
+        </div>
+    </header>
+
+    <main>
+        <div class="wrap">
+            {{ content }}
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="wrap" style="padding-bottom:0;">
+            secretmyth · an anomaly · <span style="color:var(--fg-4);">everything else is pwn</span>
+        </div>
+    </footer>
+
+    {% if page.matrix_rain %}
+    <script>
+    (function () {
+        var c = document.getElementById('rain');
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        var fontSize = 14, cols = 0, drops = [];
+        var chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノメモヤユヨラリルレロワヲン';
+        function resize() {
+            c.width = c.clientWidth || window.innerWidth;
+            c.height = c.clientHeight || 140;
+            cols = Math.floor(c.width / fontSize);
+            drops = [];
+            for (var i = 0; i < cols; i++) drops[i] = Math.random() * -20;
+        }
+        function draw() {
+            ctx.fillStyle = 'rgba(6,7,10,0.08)';      // fade trail
+            ctx.fillRect(0, 0, c.width, c.height);
+            ctx.fillStyle = 'rgba(54,255,154,0.45)';  // phosphor green
+            ctx.font = fontSize + 'px monospace';
+            for (var i = 0; i < cols; i++) {
+                var ch = chars[(Math.random() * chars.length) | 0];
+                var x = i * fontSize;
+                var y = drops[i] * fontSize;
+                ctx.fillText(ch, x, y);
+                if (y > c.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        setInterval(draw, 66);
+    })();
+    </script>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,15 @@
+---
+layout: default
+title: tags
+permalink: /tags/
+---
+
+<h2 class="post-title" style="font-size:1.1rem;">tags</h2>
+<ul class="drops">
+    {% for tag in site.tags %}
+    <li>
+        <a class="title" href="/tags/{{ tag[0] | slugify }}/">{{ tag[0] }}</a>
+        <span class="date">· {{ tag[1].size }} post{% if tag[1].size > 1 %}s{% endif %}</span>
+    </li>
+    {% endfor %}
+</ul>

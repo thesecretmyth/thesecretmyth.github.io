@@ -1,0 +1,20 @@
+---
+layout: default
+---
+
+<article class="post">
+    <header>
+        <h2 class="post-title" style="font-size:1.1rem;">tag · {{ page.tag }}</h2>
+    </header>
+
+    <ul class="drops">
+        {% for post in page.posts %}
+        <li>
+            <span class="date">{{ post.date | date: "%Y-%m-%d" }}</span>
+            <a class="title" href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <p style="margin-top:1.5rem;"><a href="/tags/">← all tags</a></p>
+</article>
