@@ -24,7 +24,8 @@ layout: default
             <span class="side-anomaly">an anomaly</span>
 
             <div class="toc" id="toc">
-                <button class="toc-toggle" id="toc-toggle" type="button" aria-expanded="true" aria-controls="toc-list-wrap">
+                <button class="toc-toggle" id="toc-toggle" type="button" aria-expanded="true"
+                    aria-controls="toc-list-wrap">
                     <span>Sections</span>
                     <span class="toc-arrow" aria-hidden="true">▾</span>
                 </button>
@@ -36,6 +37,11 @@ layout: default
 
         <div class="post-content">
             {{ content }}
+
+            <footer class="post-credit">
+                <p>original writeup · <a href="{{ site.url }}{{ page.url }}">secretmyth.blog</a> · {{ page.date | date:
+                    "%b %d, %Y" }} </p>
+            </footer>
         </div>
     </div>
 </article>

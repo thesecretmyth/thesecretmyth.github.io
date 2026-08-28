@@ -1,0 +1,91 @@
+/* Tomorrow Night — dark syntax theme by Chris Kempson
+   Ported to Rouge token classes. Background set transparent so it never
+   paints an inner box inside the terminal chrome. */
+.highlight {
+    color: #c5c8c6;
+    background-color: transparent;
+}
+
+.highlight table td { padding: 5px; }
+.highlight table pre { margin: 0; }
+
+.highlight .c,
+.highlight .ch,
+.highlight .cd,
+.highlight .cpf { color: #969896; font-style: italic; }
+
+.highlight .cm,
+.highlight .c1 { color: #969896; font-style: italic; }
+
+.highlight .cp { color: #969896; font-weight: bold; }
+
+.highlight .cs { color: #969896; font-weight: bold; font-style: italic; }
+
+.highlight .err { color: #cc6666; background-color: #1d1f21; }
+
+.highlight .k,
+.highlight .kv { color: #b294bb; }
+.highlight .kc,
+.highlight .kd,
+.highlight .kn,
+.highlight .kp,
+.highlight .kr,
+.highlight .kt { color: #b294bb; }
+
+.highlight .o,
+.highlight .ow { color: #c5c8c6; }
+.highlight .p { color: #c5c8c6; }
+
+.highlight .gd { color: #cc6666; }
+.highlight .ge { font-style: italic; }
+.highlight .ges { font-weight: bold; font-style: italic; }
+.highlight .gs { font-weight: bold; }
+.highlight .gu { color: #969896; }
+.highlight .gt { color: #cc6666; }
+
+.highlight .m,
+.highlight .mb,
+.highlight .mf,
+.highlight .mh,
+.highlight .mi,
+.highlight .il,
+.highlight .mo,
+.highlight .mx,
+.highlight .ld { color: #de935f; }
+
+.highlight .s,
+.highlight .sb,
+.highlight .sc,
+.highlight .sd,
+.highlight .s2,
+.highlight .sh,
+.highlight .si,
+.highlight .sx,
+.highlight .sr,
+.highlight .s1,
+.highlight .ss,
+.highlight .dl { color: #b5bd68; }
+
+.highlight .na,
+.highlight .nc,
+.highlight .nf,
+.highlight .fm,
+.highlight .nd,
+.highlight .nl,
+.highlight .no,
+.highlight .nv,
+.highlight .vc,
+.highlight .vg,
+.highlight .vi,
+.highlight .vm { color: #81a2be; }
+
+.highlight .nb,
+.highlight .bp { color: #8abeb7; }
+
+.highlight .ni,
+.highlight .nn,
+.highlight .ne { color: #f0c674; }
+
+.highlight .nt { color: #cc6666; }
+
+.highlight .w { color: #c5c8c6; }

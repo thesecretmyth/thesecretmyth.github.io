@@ -1,0 +1,11 @@
+<div class="terminal">
+  <div class="terminal-bar">
+    <span class="terminal-dot red"></span>
+    <span class="terminal-dot yellow"></span>
+    <span class="terminal-dot green"></span>
+    <span class="terminal-title">{{ include.title | default: "➜ " }}</span>
+  </div>
+  <div class="terminal-body">
+    {{ include.content }}
+  </div>
+</div>

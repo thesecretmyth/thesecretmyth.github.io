@@ -406,6 +406,8 @@ Now combine that with pre-authentication-disabled accounts:
 
 > Note: [Kerberoasting via AS-REP Roasting](https://www.netexec.wiki/ldap-protocol/kerberoasting#kerberoasting-via-as-rep-roasting)
 
+> For the **cross-principal** twist — using the no-preauth TGT to request TGS for *SPN-less* principals that normal Kerberoasting can't reach — see my [Westbridge University range writeup, Section 7.1](https://secretmyth.blog/hacksmarter/hsm-westbridge-university-range/#71-why-this-works).
+
 NetExec implements this with `--no-preauth-targets` — it iterates our user list, uses any no-preauth accounts as the requesting identity, and asks for tickets to every SPN it can find:
 
 ```bash
