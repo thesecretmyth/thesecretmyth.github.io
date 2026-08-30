@@ -1,0 +1,10 @@
+---
+# Cloudflare Pages build config.
+# Connect this repo, set:
+#   Build command:  bundle exec jekyll build
+#   Build output:   _site
+#   (root dir left as repo root)
+#
+# This file is read by `npx wrangler pages dev` and the CF dashboard.
+name: secretmyth-blog
+pages_build_output_dir: _site

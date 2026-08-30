@@ -1,5 +1,5 @@
-Gemfile
-Gemfile.lock
+# Gemfile/Gemfile.lock are NOW committed (Cloudflare Pages needs them to build).
+# Remove the ignore lines that previously excluded them.
 
 # Jekyll build output (generated, never commit)
 _site/

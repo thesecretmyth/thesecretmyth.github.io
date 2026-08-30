@@ -91,7 +91,9 @@
     </header>
 
     <main>
+        {% unless page.layout == 'post' %}<div class="page-wrap">{% endunless %}
         {{ content }}
+        {% unless page.layout == 'post' %}</div>{% endunless %}
     </main>
 
     <footer class="site-footer">

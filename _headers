@@ -1,0 +1,26 @@
+# Global security + caching headers for Cloudflare Pages.
+# Uploaded via `wrangler pages deploy _site --config wrangler.toml` or
+# the dashboard's "Headers" setting. These cannot be set on GitHub Pages.
+#
+# Each block matches a path pattern and applies the listed headers.
+# Order matters: more specific (first) blocks are evaluated before "*".
+
+# --- API / form endpoints (none today, but ready if you add them) ---
+# [/api/*]
+#   Access-Control-Allow-Origin: https://secretmyth.blog
+
+# --- Everything else ---
+/*
+  # Baseline hardening
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()
+  # Block injection of active content from other origins
+  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'
+  # Long cache for fingerprinted static assets (images, css, js)
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# --- Fingerprinted / immutable assets get a long TTL ---
+/assets/*
+  Cache-Control: public, max-age=604800, immutable
