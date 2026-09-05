@@ -543,7 +543,7 @@ Smartcard Authentication       | -1577058304     | 0xa2000000   | [+] Secure
 
 `SmartcardAuthentication` sits at `0xa2000000` — the three require-bits, no supply bits. Eleven other templates light up `[!] ESC1 VULN`, but those ship from Microsoft with `ENROLLEE_SUPPLIES_SUBJECT = true` baked in — out-of-box defaults, not our attack. (Certipy applies enrollment and EKU filters on top of the supply-bit check, which is why its census named only ESC4 and ESC13 instead of twelve templates.) The target is the one writable template with the safe shape.
 
-> **Note:** Several built-in Microsoft templates (`CA Exchange`, `Web Server`, `Root Certification Authority`, etc.) appear as `[!] ESC1 VULN` because they have `CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT` set by design. They're not exploitable without manager approval rights. The parser above checks only the name-flag; always verify `msPKI-Enrollment-Flag` (no manager approval required?) and enrollment rights (low-priv principal can enroll?) before acting on any hit.
+> **Note:** Several built-in Microsoft templates (`CA Exchange`, `Web Server`, `Root Certification Authority`, etc.) appear as `[!] ESC1 VULN` because they have `CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT` set by design. The supply bit alone isn't the whole ESC1 story — enrollment rights, EKUs, and manager approval all matter, which is why certipy's census of this box (which checks those) named only ESC4 and ESC13. The parser above checks only the name-flag; always verify `msPKI-Enrollment-Flag` (no manager approval required?) and enrollment rights (low-priv principal can enroll?) before acting on any hit.
 
 ### State 2 — The Classic Way: OR Write
 
@@ -737,7 +737,7 @@ dc1
 
 `ping\administrator` on `dc1`. Throne.
 
-### State 4 — Restore
+### State 3 — Restore
 
 The box ends where it started. `2717908992` is the baseline `0xa2000000`:
 
@@ -763,9 +763,9 @@ Smartcard Authentication       | -1577058304     | 0xa2000000   | [+] Secure
 
 Back to `0xa2000000`, identical to State 1. One bit flipped for the attack, one bit flipped back — the 5136 in the audit log is a single-bit delta in both directions.
 
-The state numbers follow the session order, not the teaching order — the restore ran before the comparison test, so the dirty write below is State 3, and it was the last write of the session:
+The numbers follow the session order — the restore above ran before this comparison test, and the dirty write below was the last write of the session:
 
-### State 3 — The Quick CTF Dirty Way — `-v 1`
+### State 4 — The Dirty Way: Overwrite
 
 The one-liner everyone copies:
 
@@ -783,7 +783,7 @@ The one-liner everyone copies:
 Smartcard Authentication       | 1               | 0x00000001   | [!] ESC1 VULN
 ```
 
-Same `[!] ESC1 VULN` in the table as the OR write. But the bitmask is `0x00000001` now — the UPN-require guard, the email-require, the directory-path require, all wiped. The bulk scan can't tell the two states apart; only the hex can. The ESC1 condition is identical either way — the difference is what the template looks like *after* you've finished. (State 3 above was verified at the bitmask level; the full request ➜ PKINIT run was done on State 2.)
+Same `[!] ESC1 VULN` in the table as the OR write. But the bitmask is `0x00000001` now — the UPN-require guard, the email-require, the directory-path require, all wiped. The bulk scan can't tell the two states apart; only the hex can. The ESC1 condition is identical either way — the difference is what the template looks like *after* you've finished. (State 4 above was verified at the bitmask level; the full request ➜ PKINIT run was done on State 2.)
 
 ### Side-by-side: what the writes actually did to the bitmask
 
@@ -791,8 +791,8 @@ Same `[!] ESC1 VULN` in the table as the OR write. But the bitmask is `0x0000000
 |---|---|---|---|---|
 | State 1 — baseline | `0xa2000000` | `-1577058304` | (yes) | (yes) |
 | State 2 — OR write (`2717908993`) | `0xa2000001` | `-1577058303` | **yes** | **yes** |
-| State 3 — quick-and-dirty write (`1`) | `0x00000001` | `1` | **no** (all wiped) | **no** (removed) |
-| State 4 — restore | `0xa2000000` | `-1577058304` | (yes) | (yes) |
+| State 3 — restore | `0xa2000000` | `-1577058304` | (yes) | (yes) |
+| State 4 — dirty write (`1`) | `0x00000001` | `1` | **no** (all wiped) | **no** (removed) |
 
 ## The Cross-Forest Wall — The Write Side
 
@@ -914,7 +914,7 @@ Same chain, four commands, no cross-realm Kerberos, no FSPs, no enhanced LDAP si
 
 When auditing an AD CS template, the integer value of `msPKI-Certificate-Name-Flag` is a red herring. The decimal `-1509949440`, the unsigned `2785017856`, and the hex `0xa6000000` describe the *same* template; only the bit-decode distinguishes a safe template from an ESC1. The cheat-sheet approach of grep'ing for `== 1` or `== 65536` misses every template that combines a supply bit with one or more require bits — and that's the majority of real-world vulnerable templates, not the minority.
 
-The bulk-scan tables in the walkthrough above show *exactly* why this matters. State 2 (OR write) and State 3 (quick-and-dirty `-v 1`) are *visually identical* in the table — both flag `Smartcard Authentication` as `[!] ESC1 VULN`. The only way to tell them apart is to read the bitmask itself. The quick-and-dirty way leaves the template with `0x00000001` (no require-bits); the classic way leaves it with `0xa2000001` (require-bits preserved, anti-Certifried guard intact). Same forged cert, same Administrator NT hash — different residual state. Which one you reach for depends on the situation, not on the skill of the person running it.
+The bulk-scan tables in the walkthrough above show *exactly* why this matters. State 2 (OR write) and State 4 (dirty write) are *visually identical* in the table — both flag `Smartcard Authentication` as `[!] ESC1 VULN`. The only way to tell them apart is to read the bitmask itself. The quick-and-dirty way leaves the template with `0x00000001` (no require-bits); the classic way leaves it with `0xa2000001` (require-bits preserved, anti-Certifried guard intact). Same forged cert, same Administrator NT hash — different residual state. Which one you reach for depends on the situation, not on the skill of the person running it.
 
 And the defender has the same decision in reverse. Both writes generate the same Event 5136 — but the before/after values tell two different stories: `0xa2000000 ➜ 0xa2000001` is a one-bit delta, a change meant to be undone; `0xa2000000 ➜ 0x00000001` is a demolition. If you only alert on "the attribute changed," you can't tell them apart. Read the values, not the event.
 
