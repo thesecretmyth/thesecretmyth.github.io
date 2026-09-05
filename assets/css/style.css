@@ -56,6 +56,16 @@ a:hover { text-decoration: underline; }
 
 ::selection { background: var(--phos); color: var(--term-bg); }
 
+/* thin, theme-matched scrollbars everywhere (page + overflow boxes) */
+html {
+    scrollbar-width: thin;
+    scrollbar-color: #4a4e55 #14161a;
+}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #4a4e55; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #5a5e66; }
+::-webkit-scrollbar-track { background: transparent; }
+
 /* ---- header ---- */
 .site-header {
     padding: 1.5rem 0 0;
@@ -255,6 +265,8 @@ pre {
     border-radius: 4px;
     padding: 1rem;
     overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
     font-size: 0.78rem;
     line-height: 1.5;
     font-family: ui-monospace, "Fira Code", Menlo, monospace;
