@@ -13,7 +13,6 @@ future: true
 # `tmp/` holds lab artifacts, scratch notes, and machine-specific evidence
 # (e.g. `tmp/PingPong/ESC4-ESC1.md`) that are never published.
 exclude:
-  - tmp
   - scripts
   - Gemfile
   - Gemfile.lock
