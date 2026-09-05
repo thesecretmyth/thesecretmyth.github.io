@@ -5,6 +5,10 @@ markdown: kramdown
 theme: null
 permalink: /:categories/:title/
 
+# Publish posts dated "today" in the author's timezone even when the
+# build server (UTC) hasn't reached that date yet.
+future: true
+
 # Don't include these directories when building the site.
 # `tmp/` holds lab artifacts, scratch notes, and machine-specific evidence
 # (e.g. `tmp/PingPong/ESC4-ESC1.md`) that are never published.
