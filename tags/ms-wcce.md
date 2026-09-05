@@ -1,10 +1,8 @@
 ---
 layout: tag
-tag: adcs
+tag: ms-wcce
 posts:
   - title: "Read the Bits, Not the Integer: msPKI-Certificate-Name-Flag and the ESC4 ➜ ESC1 Chain"
     url: /adcs/demystifying-mspki-certificate-name-flag/
-  - title: "HackTheBox: Logging"
-    url: "/hackthebox/htb-logging/#64-tls-certificate-generation-ad-cs"
-permalink: /tags/adcs/
+permalink: /tags/ms-wcce/
 ---

@@ -9,6 +9,6 @@ posts:
   - title: "NetExec Lab: BarbHack 2024 (Gotham City)"
     url: /netexec/nxc-barbhack24-gotham/
   - title: "HackSmarter: Westbridge University (Range)"
-    url: /hacksmarter/hsm-westbridge-university-range/
+    url: "/hacksmarter/hsm-westbridge-university-range/#1-reconnaissance"
 permalink: /tags/windows-ad/
 ---
