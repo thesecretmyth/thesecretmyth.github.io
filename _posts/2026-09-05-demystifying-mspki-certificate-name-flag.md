@@ -274,6 +274,7 @@ PingPong is a two-forest box. `PING.HTB` hosts the PKI — the CA `ping-DC1-CA` 
 # Cross-Realm LDAP Ticket
 ➜ env KRB5CCNAME='r.martinelli.ccache' \
 kvno ldap/dc1.ping.htb
+ldap/dc1.ping.htb@PING.HTB: kvno = 7
 ```
 
 A TGT from the PONG KDC — nothing special yet. But it's a ticket for a *different* forest than the one we're about to attack, and that's the wrinkle the whole box hangs on. `kvno` asks the PONG KDC for a service ticket to `ldap/dc1.ping.htb`; the PONG KDC doesn't own that SPN, so it issues a cross-realm referral. The system's native `libkrb5` hops to the PING KDC and the service ticket lands in the ccache — silently, correctly. Impacket cannot make this hop. Every tool choice from here on is decided by that sentence.
@@ -542,6 +543,8 @@ Smartcard Authentication       | -1577058304     | 0xa2000000   | [+] Secure
 
 `SmartcardAuthentication` sits at `0xa2000000` — the three require-bits, no supply bits. Eleven other templates light up `[!] ESC1 VULN`, but those ship from Microsoft with `ENROLLEE_SUPPLIES_SUBJECT = true` baked in — out-of-box defaults, not our attack. (Certipy applies enrollment and EKU filters on top of the supply-bit check, which is why its census named only ESC4 and ESC13 instead of twelve templates.) The target is the one writable template with the safe shape.
 
+> **Note:** Several built-in Microsoft templates (`CA Exchange`, `Web Server`, `Root Certification Authority`, etc.) appear as `[!] ESC1 VULN` because they have `CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT` set by design. They're not exploitable without manager approval rights. The parser above checks only the name-flag; always verify `msPKI-Enrollment-Flag` (no manager approval required?) and enrollment rights (low-priv principal can enroll?) before acting on any hit.
+
 ### State 2 — The Classic Way: OR Write
 
 `2717908993` — the unsigned `0xa2000001`, computed above in the OPSEC section. Bit 0 OR'd in, nothing else touched:
@@ -602,7 +605,7 @@ Smartcard Authentication       | -1577058303     | 0xa2000001   | [!] ESC1 VULN
 
 ESC4 executed. The template now has a supply bit *and* keeps all three require-bits. Compare that to what the Quick CTF Dirty Way does, below.
 
-> **Review note — the preserved guards don't block the forge.** Once bit 0 is set, the CA takes the identity from the CSR as-is — the preserved require-bits did not inject the requester's own UPN into the forged cert (the `certipy auth` output below shows only `Administrator@ping.htb` in the SAN). Their value is elsewhere: the template's original smartcard-logon behaviour the moment bit 0 is flipped back, and a bit-exact restore. The OR write isn't "safe guards still armed" — it's "nothing was destroyed that we'd have to rebuild."
+> **Note:** The preserved require-bits don't prevent the identity forge — once bit 0 is set, the CA takes the CSR as-is. Their value is operational: the template's original behaviour survives intact and restoring to baseline is one write back. The OR write isn't "safer for the victim" — it's "cleaner for the operator and auditor."
 
 ### What Certipy Sees — Seat-Dependent
 
