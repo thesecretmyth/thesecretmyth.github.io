@@ -1,7 +1,9 @@
 ---
 layout: default
 ---
-<article class="post">
+{% assign post_class = "post" %}
+{% if page.wide %}{% assign post_class = "post post-wide" %}{% endif %}
+<article class="{{ post_class }}">
     <header class="post-header">
         <h1 class="post-title">{{ page.title }}</h1>
         <div class="post-meta">
@@ -19,10 +21,8 @@ layout: default
     </header>
 
     <div class="post-body">
+        {% unless page.wide %}
         <aside class="side">
-            <a class="side-brand" href="{{ '/' | relative_url }}">secretmyth</a>
-            <span class="side-anomaly">an anomaly</span>
-
             <div class="toc" id="toc">
                 <button class="toc-toggle" id="toc-toggle" type="button" aria-expanded="true"
                     aria-controls="toc-list-wrap">
@@ -34,6 +34,7 @@ layout: default
                 </nav>
             </div>
         </aside>
+        {% endunless %}
 
         <div class="post-content">
             {{ content }}

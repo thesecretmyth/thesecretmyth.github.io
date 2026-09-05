@@ -14,7 +14,11 @@
     {% if page.matrix_rain %}<canvas id="rain"></canvas>{% endif %}
 
     <header class="site-header">
+        {% unless page.matrix_rain %}
+        <a class="corner-brand" href="{{ '/' | relative_url }}" aria-label="secretmyth — home">secretmyth</a>
+        {% endunless %}
         <div class="wrap">
+            {% if page.matrix_rain %}
             <a class="site-logo-link" href="{{ '/' | relative_url }}" aria-label="secretmyth — home">
             <svg class="site-logo" viewBox="0 0 290 50" fill="none" role="img" aria-label="secretmyth">
                 <defs>
@@ -44,6 +48,7 @@
             </svg>
             </a>
             <p class="tagline">an anomaly</p>
+            {% endif %}
 
             {% if page.matrix_line %}
             <p class="matrix-line" id="matrix-line"><span id="matrix-text"></span><span class="caret"></span></p>
@@ -98,7 +103,7 @@
 
     <footer class="site-footer">
         <div class="wrap" style="padding-bottom:0;">
-            secretmyth · an anomaly · <span style="color:var(--fg-4);">everything else is pwn</span>
+            secretmyth · an anomaly · <a href="/info/">info</a> · <span style="color:var(--fg-4);">everything else is pwn</span>
         </div>
     </footer>
 

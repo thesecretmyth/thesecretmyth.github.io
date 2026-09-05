@@ -92,7 +92,7 @@ h1.site-title {
 .site-title a { color: inherit; text-decoration: none; }
 .site-title a:hover { text-decoration: none; }
 
-/* compact layered-glitter logo (sl0p-style, subdomain-sized) */
+/* compact layered-glitter logo (home page only) */
 .site-logo-link {
     display: inline-block;
     text-decoration: none;
@@ -109,6 +109,24 @@ h1.site-title {
     color: var(--fg-3);
     font-size: 0.85rem;
     margin: 0 0 0.6rem 8px;
+}
+
+/* small corner wordmark — the only home button (non-home pages) */
+.corner-brand {
+    position: fixed;
+    top: 1.1rem;
+    right: 1rem;
+    z-index: 40;
+    font-size: 0.92rem;
+    letter-spacing: 2px;
+    color: var(--phos);
+    text-decoration: none;
+    text-shadow: 0 0 10px rgba(54, 255, 154, 0.4);
+}
+.corner-brand:hover {
+    color: #ffffff;
+    text-decoration: none;
+    text-shadow: 0 0 14px rgba(54, 255, 154, 0.7);
 }
 
 /* matrix-cycling tagline (typewriter) */
@@ -279,11 +297,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 .post-credit a { color: var(--fg-2); }
 .post-credit a:hover { color: var(--phos); }
 
-/* ---- right sidebar: brand + toc ---- */
+/* ---- left sidebar: toc ---- */
 .side {
     position: fixed;
     top: 1.2rem;
-    right: 1rem;
+    left: 1rem;
     width: 253px;
     display: flex;
     flex-direction: column;
@@ -303,17 +321,16 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 .post-content {
     min-width: 0;
 }
-.side-brand {
-    font-size: 1.05rem;
-    letter-spacing: 1px;
-    color: #c5c8c6;
-    text-decoration: none;
+
+/* Wide post: opt-in via `wide: true` in front matter.
+   Drops the 820px body cap and hides the right-side TOC/brand sidebar
+   so tables and code-heavy sections can breathe. */
+.post-wide .post-body {
+    max-width: 1200px;
 }
-.side-brand:hover { color: #f5f7f8; text-decoration: none; }
-.side-anomaly {
-    color: #969896;
-    font-size: 0.72rem;
-    margin-top: -0.3rem;
+.post-wide table {
+    font-size: 0.84rem;     /* a touch larger than the 820px-wide default,
+                               so wide tables don't feel anaemic */
 }
 .toc {
     max-height: calc(100vh - 16rem);
@@ -324,12 +341,12 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
     background: #1d1f21;
     padding: 0.35rem;
 }
-@media (max-width: 1150px) {
-    /* no room for a right corner sidebar → stack the TOC inline above the post */
+@media (max-width: 1360px) {
+    /* no room for a fixed left sidebar → stack the TOC inline above the post */
     .post-body { padding: 0 1.1rem; }
     .side {
         position: static;
-        right: auto;
+        left: auto;
         width: 100%;
         max-height: none;
         margin: 0 0 0.5rem;
@@ -338,27 +355,9 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
         align-items: baseline;
         gap: 0.6rem 1rem;
     }
-    .side-brand {
-        position: fixed;
-        top: 1.2rem;
-        right: 1rem;
-        z-index: 30;
-    }
     .toc { max-height: none; width: 100%; }
 }
 
-/* ---- home corner socials ---- */
-.corner-social {
-    position: fixed;
-    top: 1.2rem;
-    right: 1rem;
-    display: flex;
-    gap: 0.8rem;
-    font-size: 0.9rem;
-    z-index: 30;
-}
-.corner-social a { color: var(--fg-1); text-decoration: none; }
-.corner-social a:hover { color: var(--phos); text-decoration: underline; }
 .toc-toggle {
     display: flex;
     justify-content: space-between;
@@ -404,7 +403,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 
 /* Terminal window chrome */
 .terminal {
-    margin: 1.5rem 0;
+    margin: 1rem 0 1.4rem 0;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--term-bg);
@@ -441,12 +440,27 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 }
 
 .terminal-body {
-    padding: 1rem 1.2rem;
+    padding: 0.7rem 1rem 1rem 1rem;
     overflow-x: auto;
-    font-size: 0.78rem;
-    line-height: 1.6;
+    font-size: 0.72rem;
+    line-height: 1.5;
     color: #c5c8c6;
     font-family: ui-monospace, "Fira Code", Menlo, "Share Tech Mono", monospace;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.terminal-body pre,
+.terminal-body code {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.terminal-body::-webkit-scrollbar {
+    height: 0;
+    display: none;
 }
 
 .terminal-body .prompt {

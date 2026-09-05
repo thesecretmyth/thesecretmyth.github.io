@@ -4,3 +4,19 @@ url: "https://secretmyth.blog"
 markdown: kramdown
 theme: null
 permalink: /:categories/:title/
+
+# Don't include these directories when building the site.
+# `tmp/` holds lab artifacts, scratch notes, and machine-specific evidence
+# (e.g. `tmp/PingPong/ESC4-ESC1.md`) that are never published.
+exclude:
+  - tmp
+  - scripts
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - README.md
+  - LICENSE
+  - .jekyll-cache
+  - .git
+  - .github
