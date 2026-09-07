@@ -33,9 +33,9 @@ html, body {
     margin: 0;
     min-height: 100vh;
     color: var(--text);
-    font-family: "Share Tech Mono", ui-monospace, Menlo, monospace;
+    font-family: "Share Tech Mono", ui-monospace, Menlo, monospace,
+                 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", emoji;
     background-color: var(--bg);
-    background-image:
         radial-gradient(1100px 760px at 50% -14%, var(--bg-core) 0%, var(--bg-mid) 52%, var(--bg-edge) 100%),
         radial-gradient(900px 600px at 90% 110%, var(--bg-corner) 0%, transparent 60%);
     background-attachment: fixed;
