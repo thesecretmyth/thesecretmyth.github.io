@@ -37,7 +37,7 @@ You have been engaged to conduct a comprehensive penetration test against their 
 
 # Prologue
 
-Welcome to the WESTBRIDGE estate. In modern Active Directory exploitation, You rarely need a shiny zero-day to burn a forest to the ground. you just need a compounding series of administrative shortcuts. This write-up is a deep dive into exploiting the connective tissue of a Windows environment, navigating a dual-forest architecture (`WESTBRIDGE.HSM` and `WESTBRIDGE-RESEARCH.HSM`) where every misconfiguration is a stepping stone, and trust is the ultimate vulnerability.
+Welcome to the WESTBRIDGE estate. In modern Active Directory exploitation, You rarely need a shiny zero-day to burn a forest to the ground. You just need a compounding series of administrative shortcuts. This write-up is a deep dive into exploiting the connective tissue of a Windows environment, navigating a dual-forest architecture (`WESTBRIDGE.HSM` and `WESTBRIDGE-RESEARCH.HSM`) where every misconfiguration is a stepping stone, and trust is the ultimate vulnerability.
 
 Across seven hosts, seven flags, and nineteen stages, we’ll ping-pong from a leaky `robots.txt` all the way to a cross-forest DCSync. Along the way, we’ll forge Silver Tickets to bypass humans, weaponize DNS coercion, practice a little AD necromancy by resurrecting tombstones for `GenericAll` rights, and abuse ADCS (ESC4) to mint our own Domain Admin credentials. No magic tricks, just pure protocol abuse.
 
@@ -3825,9 +3825,11 @@ DC02 prints as `NONE` because nxc's anonymous SMB bind was refused — the fores
 Update the `/etc/hosts` file and create a **dual-realm `krb5.conf`** so the system's native `libkrb5` knows how to resolve both KDCs:
 
 ```bash
+# Update Hosts
 10.0.20.5      DC02.westbridge-research.hsm westbridge-research.hsm DC02
 10.0.20.10     WEB.westbridge-research.hsm WEB
 
+# Update krb5 config
 ➜ cat <<EOF | sudo tee /tmp/krb5.conf
 [libdefaults]
   default_realm = WESTBRIDGE.HSM
