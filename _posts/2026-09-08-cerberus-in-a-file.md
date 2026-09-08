@@ -12,11 +12,11 @@ permalink: /kerberos/cerberus-in-a-file/
 
 ## Prologue: Adopting the Dog
 
-*Why spend a week trying to crack the master's password when you can just adopt the dog?*
+> Why spend a week trying to crack the master's password when you can just adopt the dog?
 
 In an Active Directory environment, administrators go to great lengths to protect passwords. But on domain-joined Linux systems, those identities are often serialized directly to disk to allow for seamless service authentication. This is the credential that didn't ask permission.
 
-### TL;DR
+## TL;DR
 
 A Kerberos keytab isn't a temporary session token. It is a plaintext-equivalent domain identity, serialized to a file, that mints Ticket Granting Tickets (TGTs) forever. Here is exactly how it works, how to hunt for it, and the operational tooling you need to let it off the leash.
 
@@ -45,7 +45,7 @@ When a keytab is consumed, no password string ever enters the exchange. It build
 
 ## 3. Hunting the Hound
 
-*Letting sleeping dogs lie is terrible advice when the dog in question mints TGTs forever.*
+> Letting sleeping dogs lie is terrible advice when the dog in question mints TGTs forever.
 
 Before you can use a keytab, you have to find it. Because keytabs are used for Kerberos SSO on Linux, they are often buried in `/etc`, `/opt`, or application-specific directories.
 
@@ -66,7 +66,7 @@ Before you can use a keytab, you have to find it. Because keytabs are used for K
 
 ## 4. The Westbridge Capture
 
-*But you don't always have to hunt. Sometimes, the dog is just sitting on the porch.*
+> But you don't always have to hunt. Sometimes, the dog is just sitting on the porch.
 
 In the Westbridge University range, we already had the keytab by the time we noticed what it was. Root on WEB ([Flag03](/hacksmarter/hsm-westbridge-university-range/#14-web-ssh-key-cron-and-a-kerberos-shortcut)) turned `linpeas`' Kerberos section into a loot list, and one of the entries was a file that didn't behave like a standard credential file.
 
