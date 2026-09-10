@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Read the Bits, Not the Integer: msPKI-Certificate-Name-Flag and the ESC4➜ESC1 Chain"
+title: "Read the Bits, Not the Integer: msPKI-Certificate-Name-Flag and the ESC4⤍ESC1 Chain"
 categories: [ADCS]
 tags: [msPKI-Certificate-Name-Flag, adcs, esc1, esc4, certifried, cve-2022-26923, ms-crtd, ms-wcce]
 wide: true
@@ -20,9 +20,9 @@ tag_anchors:
 
 The `msPKI-Certificate-Name-Flag` attribute is frequently explained using an oversimplified, inaccurate sequential bitmask in Active Directory Certificate Services (AD CS) write-ups. If you are relying on community cheat sheets to identify [ESC1](#the-two-mode-framework--what-makes-a-template-abusable) or [ESC4](#the-two-mode-framework--what-makes-a-template-abusable) vulnerabilities, you might be missing critical attack paths due to a fundamental misunderstanding of how this attribute is structured.
 
-This post uses the official Microsoft protocol specifications as the source of truth to decode the exact values, expose the common "5-row table" fallacy, and provide a definitive reference for offensive operators and detection engineers. The second half is a full end-to-end run of the ESC4 ➜ ESC1 chain on the live HackTheBox machine [PingPong](https://app.hackthebox.com/machines/PingPong) — every command, every output, every failure.
+This post uses the official Microsoft protocol specifications as the source of truth to decode the exact values, expose the common "5-row table" fallacy, and provide a definitive reference for offensive operators and detection engineers. The second half is a full end-to-end run of the ESC4➜ESC1 chain on the live HackTheBox machine [PingPong](https://app.hackthebox.com/machines/PingPong) — every command, every output, every failure.
 
-### TL;DR
+## TL;DR
 
 `msPKI-Certificate-Name-Flag` is a bitmask — not a boolean. And yes: in a lab, `bloodyAD set object ... -v 1` gives you the same forged cert. Everyone who says "just 0➜1, what's the use" is right — until the baseline has bits you can't afford to lose. On PingPong the baseline is `0xa2000000`: three require-bits encoding UPN, email, and directory-path requirements. A dirty write of `1` wipes all three — the template stops building identities from AD, someone's smartcard auth changes shape, and the blue team gets a ticket. The correct move is an OR: read the existing value, compute `existing | 1`, write back the combined result. `0xa2000000 ➜ 0xa2000001` is a one-bit delta and a clean exploit. `0xa2000000 ➜ 0x00000001` is a demolition. In a CTF lab, none of this matters. **In a real engagement, it's the difference between a clean op and getting caught because someone's smartcard stopped working.** Read the baseline. OR into it.
 
