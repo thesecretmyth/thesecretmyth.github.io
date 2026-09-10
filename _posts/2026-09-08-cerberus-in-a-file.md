@@ -3,9 +3,15 @@ layout: post
 title: "Cerberus in a File"
 categories: [Kerberos]
 tags: [keytab, kerberos, kinit, keytabextract, linux, plaintext-equivalent, ad]
-slug: cerberus-in-a-file
+tag_anchors:
+  keytab: "#6-letting-the-dog-off-the-leash"
+  kerberos: "#1-the-three-headed-dog"
+  kinit: "#way-a--keytab-as-a-file-kinit--k--t"
+  keytabextract: "#way-b--keytab-as-a-key-source-keytabextract--gettgtpy"
+  linux: "#4-the-westbridge-capture"
+  plaintext-equivalent: "#2-ticket-vs-keytab-stealing-the-depot"
+  ad: "#4-the-westbridge-capture"
 wide: true
-permalink: /kerberos/cerberus-in-a-file/
 ---
 
 > The file that knew the password.
