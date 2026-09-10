@@ -16,3 +16,5 @@ group :jekyll_plugins do
   gem "rouge"
   gem "webrick"
 end
+
+gem "erb", "~> 6.0"
