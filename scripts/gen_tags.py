@@ -60,7 +60,7 @@ def parse_post(path):
 
 def yaml_str(value):
     """Quote a YAML scalar if it contains characters that need it."""
-    return f'"{value}"' if (":" in value or value.startswith("#") or "#" in value) else value
+    return f'"{value}"' if (":" in value or value.startswith("#") or " " in value or "#" in value) else value
 
 
 def main():
