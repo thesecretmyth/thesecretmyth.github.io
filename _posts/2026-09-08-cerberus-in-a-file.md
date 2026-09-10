@@ -14,8 +14,6 @@ tag_anchors:
 wide: true
 ---
 
-> The file that knew the password.
-
 ## Prologue: Adopting the Dog
 
 > Why spend a week trying to crack the master's password when you can just adopt the dog?
