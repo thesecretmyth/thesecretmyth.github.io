@@ -94,7 +94,7 @@ That's not a BloodHound finding. It's the next section.
 
 #### The BloodHound Blindspot
 
-The intended path runs through a relay: `bob.w` → `stephen.m` → `auditor`. The chain is `bob.w` exercises `WriteProperty` over `stephen.m`'s RDN, and `stephen.m` holds `ForceChangePassword` over `auditor`. The permissions are layered so no single low-priv account can touch the Auditor directly.
+The intended path runs through a relay: `bob.w` ➜ `stephen.m` ➜ `auditor`. The chain is `bob.w` exercises `WriteProperty` over `stephen.m`'s RDN, and `stephen.m` holds `ForceChangePassword` over `auditor`. The permissions are layered so no single low-priv account can touch the Auditor directly.
 
 We found a shorter path. `bob.w` holds `WriteProperty` on `auditor`'s RDN directly — an object-specific ACE that automated tooling routinely misses.
 
@@ -272,7 +272,7 @@ hercules\auditor
 dc
 ```
 
-We're on the Domain Controller as `auditor`. The intended path to this account runs through a relay — `bob.w` → `stephen.m` → `auditor`. We found that `bob.w`'s `WriteProperty` on `auditor`'s RDN was a direct path instead, and we used it. The move did the work the relay was supposed to do.
+We're on the Domain Controller as `auditor`. The intended path to this account runs through a relay — `bob.w` ➜ `stephen.m` ➜ `auditor`. We found that `bob.w`'s `WriteProperty` on `auditor`'s RDN was a direct path instead, and we used it. The move did the work the relay was supposed to do.
 
 Labour I is complete. We have a shell on the DC as `auditor`. The next labours are about what we do with it — and about the defensive automation that's been watching the directory the whole time, waiting to clean up exactly the kind of mess we just made.
 
@@ -539,7 +539,7 @@ certipy req \
 [*] Wrote certificate and private key to 'ashley.b.pfx'
 ```
 
-The certificate for `ashley.b` is saved as `ashley.b.pfx`. That PFX contains both the certificate (with the UPN `ashley.b@hercules.htb`) and the private key. It's a credential that says "I am ashley.b."
+That PFX contains both the certificate (with the UPN `ashley.b@hercules.htb`) and the private key. It's a credential that says "I am ashley.b."
 
 Now we convert that PFX into a TGT. `certipy auth -pfx` reads both the certificate and the private key from the PFX file — the file stores both together — and uses them to authenticate to the KDC via PKINIT. PKINIT is the mechanism that lets you authenticate with a certificate instead of a password or shared secret. The KDC validates the certificate's signature against the CA chain, confirms the UPN matches the principal we're requesting, and issues a TGT.
 
@@ -551,9 +551,9 @@ Now we convert that PFX into a TGT. `certipy auth -pfx` reads both the certifica
 [*] Got hash for 'ashley.b@hercules.htb': aad3b435b51404eeaad3b435b51404ee:1e719fbfddd226da74f644eac9df7fd2
 ```
 
-We now hold a TGT as `ashley.b` (saved as `ashley.b.ccache`), and we also have ashley.b's NT hash. Two credentials for the price of one certificate request.
+We now hold a TGT as `ashley.b`, and we also have `ashley.b`'s NT hash. Two credentials for the price of one certificate request.
 
-Why does this matter? Ashley is a member of **IT Support**. That's the group that has access to the aCleanup.ps1 shortcut on her desktop — the shortcut that triggers the domain's janitor task. We just spent two steps (EA cert → on-behalf-of request → PKINIT TGT) to get a ticket as the one account that can run the script we're about to weaponize. The ESC3 chain didn't just give us a credential; it gave us the account that controls the automation.
+Why does this matter? Ashley is a member of **IT Support**. That's the group that has access to the aCleanup.ps1 shortcut on her desktop — the shortcut that triggers the domain's janitor task. We just spent two steps (EA cert ➜ on-behalf-of request ➜ PKINIT TGT) to get a ticket as the one account that can run the script we're about to weaponize. The ESC3 chain didn't just give us a credential; it gave us the account that controls the automation.
 
 ### Deconstructing the Janitor (`aCleanup.ps1` & `cleanup.lnk`)
 
