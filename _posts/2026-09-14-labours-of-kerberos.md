@@ -3,7 +3,7 @@ layout: post
 title: "The 12 Labours of Kerberos: Relocating Objects, Restricted Officers, and SPN-less RBCD"
 date: 2026-09-14
 categories: [active-directory]
-tags: [kerberos, adcs, esc3, shadow-credentials, rbcd, u2u, adminsdholder, modrdn, htb-hercules, ldap-injection, machinekey-forgery, bad-odf]
+tags: [kerberos, adcs, esc3, shadow-credentials, rbcd, u2u, adminsdholder, modrdn]
 wide: true
 tag_anchors:
   kerberos: "#labour-i-strangling-the-nemean-lion-the-modrdn-maneuver"
