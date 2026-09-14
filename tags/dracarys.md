@@ -1,8 +1,8 @@
 ---
 layout: tag
-tag: red-team
+tag: dracarys
 posts:
   - title: "The Ghost SPN Attack — Constrained Delegation to Nowhere"
-    url: "/active directory/ghost-spn/"
-permalink: /tags/red-team/
+    url: /active-directory/ghost-spn/
+permalink: /tags/dracarys/
 ---
