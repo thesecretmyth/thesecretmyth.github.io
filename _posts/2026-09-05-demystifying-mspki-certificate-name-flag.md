@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Read the Bits, Not the Integer: msPKI-Certificate-Name-Flag and the ESC4⤍ESC1 Chain"
+title: "Read the Bits, Not the Integer: msPKI-Certificate-Name-Flag and the ESC4➜ESC1 Chain"
 categories: [ADCS]
 tags: [msPKI-Certificate-Name-Flag, adcs, esc1, esc4, certifried, cve-2022-26923, ms-crtd, ms-wcce]
 wide: true
@@ -882,6 +882,8 @@ msPKI-Certificate-Name-Flag: 0
 ```
 
 Same chain, five commands, no cross-realm Kerberos, no FSPs, no enhanced LDAP signing. None of the failure modes that broke the PingPong certipy calls apply. **It's a real distinction, not a stylistic preference** — the tool's failure mode is *predictable from the topology* of the target, not the skill of the operator. (The Westbridge writeup is still cooking — once it's out, [the full run](https://secretmyth.blog/hacksmarter/hsm-westbridge-university-range/) will live there.)
+
+---
 
 ## Closing — Read The Bits, Not The Integer
 
