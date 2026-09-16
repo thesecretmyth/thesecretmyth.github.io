@@ -2,7 +2,7 @@
 layout: post
 title: "HackSmarter: Westbridge University (Range)"
 categories: [HackSmarter]
-tags: [windows-ad, range, trusted-header-bypass, ldap-injection, asrep-roast, no-preauth, cross-principal-tgs, kerberoast, bloodhound, forest-trust, shadow-credentials, silver-ticket, crystalpotato, seimpersonate, esc4, adcs, tombstone, rbcd, dcsync, ksu, keytab, constrained-delegation]
+tags: [windows-ad, range, trusted-header-bypass, ldap-injection, asrep-roast, no-preauth, cross-principal-tgs, kerberoast,  forest-trust, shadow-credentials, silver-ticket, crystalpotato, seimpersonate, esc4, adcs, bloodhound, tombstone, rbcd, ksu, keytab, constrained-delegation]
 tag_anchors:
   trusted-header-bypass: "#32-demonstrating-the-bypass--x-remote-user"
   windows-ad: "#1-reconnaissance"
@@ -48,19 +48,19 @@ Across seven hosts, seven flags, and nineteen stages, we’ll ping-pong from a l
 
 *(Look, I know a seven-paragraph TL;DR is an oxymoron. But when you compromise two forests, seven hosts, and pull off AD necromancy, "short" is a relative term. If you want the absolute shortest version: we started at a leaky `robots.txt` and ended with `krbtgt`. Here is the stuff in between.)*
 
-**[WEB](#1-reconnaissance) ➜ [SQL](#9-pivot--the-hidden-sql-host) (westbridge.hsm).** Trusted-header bypass (`X-Remote-User`) + LDAP injection dump 38 users; AS-REP roast `svc_legacy`; no-preauth cross-principal TGS abuse lands `svc_mssql`'s TGS (etype-23 RC4); crack it ➜ `sqls3rv3r`; pivot to hidden SQL host (`sql.westbridge.hsm`, `10.0.10.20`, never on the wire until now); silver ticket for `MSSQL Maintenance` (RID 9497), `xp_cmdshell` (SeImpersonatePrivilege ➜ CrystalPotato) ➜ SYSTEM; restore `Westbridge.bak` ➜ `m.thompson : Pa$$w0rd` in the restored DB.
+**[WEB](#1-reconnaissance) ➜ [SQL](#9-pivot-the-hidden-sql-host) (westbridge.hsm).** Trusted-header bypass (`X-Remote-User`) + LDAP injection dump 38 users; AS-REP roast `svc_legacy`; no-preauth cross-principal TGS abuse lands `svc_mssql`'s TGS (etype-23 RC4); crack it ➜ `sqls3rv3r`; pivot to hidden SQL host (`sql.westbridge.hsm`, `10.0.10.20`, never on the wire until now); silver ticket for `MSSQL Maintenance` (RID 9497), `xp_cmdshell` (SeImpersonatePrivilege ➜ CrystalPotato) ➜ SYSTEM; restore `Westbridge.bak` ➜ `m.thompson : Pa$$w0rd` in the restored DB.
 
-**[FILES](#11-mapping-the-ous--who-lives-where) (westbridge.hsm).** m.thompson's GenericAll over Students-OU moves `r.anderson` and `c.wilson` into it and resets at will; r.anderson opens Scripts share, `webserver_monitor.ps1` runs as `svc_webmonitor` against three FQDNs; DNS records point at us, catch NetNTLMv2 (`eazypassword`); plant a shadow credential on `svc_files` via `svc_webmonitor`'s AddKeyCredentialLink; S4U2Proxy as Administrator via `svc_files`'s constrained delegation ➜ local Admin on FILES.
+**[FILES](#11-mapping-the-ous-who-lives-where) (westbridge.hsm).** m.thompson's GenericAll over Students-OU moves `r.anderson` and `c.wilson` into it and resets at will; r.anderson opens Scripts share, `webserver_monitor.ps1` runs as `svc_webmonitor` against three FQDNs; DNS records point at us, catch NetNTLMv2 (`eazypassword`); plant a shadow credential on `svc_files` via `svc_webmonitor`'s AddKeyCredentialLink; S4U2Proxy as Administrator via `svc_files`'s constrained delegation ➜ local Admin on FILES.
 
-**[WEB](#14-web--ssh-key--cron--and-a-kerberos-shortcut) (westbridge.hsm).** IT-Share kept WEB's SSH private key; SSH in as `svc_web` despite the SSSD fully-qualified-name quirk; cron-hijack the group-writable backup script ➜ `e.mitchell`. Two ways to root: crack d.reynolds' bcrypt (`Password123`) from `users.json` + sudo, or mint an AD user named `root` and let `ksu` map `root@REALM` onto local root. Root on WEB drops two keytabs: `/etc/krb5.keytab` leaks the hidden `HTTP/supportportal.westbridge.hsm` SPN, and `/etc/svc_krb_t2.keytab` is the Tier-2 provisioning account's full identity (GenericAll over IT TIER2).
+**[WEB](#14-web-ssh-key-cron-and-a-kerberos-shortcut) (westbridge.hsm).** IT-Share kept WEB's SSH private key; SSH in as `svc_web` despite the SSSD fully-qualified-name quirk; cron-hijack the group-writable backup script ➜ `e.mitchell`. Two ways to root: crack d.reynolds' bcrypt (`Password123`) from `users.json` + sudo, or mint an AD user named `root` and let `ksu` map `root@REALM` onto local root. Root on WEB drops two keytabs: `/etc/krb5.keytab` leaks the hidden `HTTP/supportportal.westbridge.hsm` SPN, and `/etc/svc_krb_t2.keytab` is the Tier-2 provisioning account's full identity (GenericAll over IT TIER2).
 
-**[HELPDESK-WS](#15-helpdesk-ws--the-tier-2-play) (westbridge.hsm).** Root on WEB exposes `/etc/svc_krb_t2.keytab` — full Kerberos identity for the Tier-2 provisioning account. GenericAll over IT TIER2 (formalised via `add genericAll` first) resets `s.harrison`; `STATUS_INVALID_LOGON_HOURS` cleared with one octet-string write; HelpDesk Workstation Admins membership ➜ WinRM Pwn3d.
+**[HELPDESK-WS](#15-helpdesk-ws-the-tier-2-play) (westbridge.hsm).** Root on WEB exposes `/etc/svc_krb_t2.keytab` — full Kerberos identity for the Tier-2 provisioning account. GenericAll over IT TIER2 (formalised via `add genericAll` first) resets `s.harrison`; `STATUS_INVALID_LOGON_HOURS` cleared with one octet-string write; HelpDesk Workstation Admins membership ➜ WinRM Pwn3d.
 
 **[DC](#16-apherson--resurrecting-the-dead) (westbridge.hsm).** Helpdesk toolbox hides `domain_defaultPW.xml`; password fits `a.pherson` (expired-on-first-login, "cannot change password") ➜ bypassed via `kpasswd` on port 464. Lifecycle rights into `CN=Deleted Objects`: restore three tombstones; access j.dillon's existing GenericAll over IT TIER3; reset `a.owen` of CA-Manager; **ESC4** via `msPKI-Certificate-Name-Flag` on the SmartCardAuthentication template — flip `CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT` (0 ➜ 1), enroll as Administrator via SAN, PKINIT the real NT hash ➜ Domain Admin.
 
 **[WEB](#18-crossing-the-trust--westbridge-researchhsm) (westbridge-research.hsm).** Trust memo names `researchoperator` as the sanctioned bridge; KeePass DB supplies its password. ligolo into 10.0.20.0/24; cross-realm referral TGT proves the trust. Support-portal chat: Research Web Operations **Global ➜ Universal ➜ Domain Local** (group-type abuse via `groupType`; ownership ≠ permission — first grant yourself GenericAll); join by foreign SID; collect password-reset rights over three accounts. Reset `r.parker` onto the research web server; targeted-kerberoast `j.bones` through t.walker's GenericWrite; webshell as the app pool; CrystalPotato ➜ SYSTEM.
 
-**[DC02](#195-lsa-secrets--the-machine-that-owns-dc02) (westbridge-research.hsm).** LSA secrets yield `WEB$`'s AES256 machine key and `a.howard`'s credentials. `a.howard`'s GenericWrite over `DC02$` is used to configure RBCD, authorizing `WEB$` to delegate. S4U impersonates Administrator against `cifs/DC02`; DCSync pours out every NT hash and Kerberos key in WESTBRIDGE-RESEARCH.HSM, krbtgt included. AES-key TGT ➜ winrmexec lands on DC02 as `wbresearch\administrator`.
+**[DC02](#19-5-lsa-secrets-the-machine-that-owns-dc02) (westbridge-research.hsm).** LSA secrets yield `WEB$`'s AES256 machine key and `a.howard`'s credentials. `a.howard`'s GenericWrite over `DC02$` is used to configure RBCD, authorizing `WEB$` to delegate. S4U impersonates Administrator against `cifs/DC02`; DCSync pours out every NT hash and Kerberos key in WESTBRIDGE-RESEARCH.HSM, krbtgt included. AES-key TGT ➜ winrmexec lands on DC02 as `wbresearch\administrator`.
 
 **Two forests, seven hosts, seven flags — no zero-days.**
 
@@ -437,14 +437,14 @@ Guest
 
 ## 4.2 What We Got
 
-> **Note — the web dump was stale/incomplete.** The `people-directory.conf.bak` we pulled is a *deprecated* config (its own header says so), and the data behind the directory app is equally out of date. The dump flags `m.thompson`, `c.wilson`, and `s.adams` as "Member of Administrators" — but that's the People Directory's *own* app-level role, not the live AD picture. Cross-referencing BloodHound later ([Section 8.5](#85-group-map) shows none of them are Domain Admins; their real group memberships are what actually drive the chain. Treat this dump as a *username list*, not an authority on privileges.
+> **Note — the web dump was stale/incomplete.** The `people-directory.conf.bak` we pulled is a *deprecated* config (its own header says so), and the data behind the directory app is equally out of date. The dump flags `m.thompson`, `c.wilson`, and `s.adams` as "Member of Administrators" — but that's the People Directory's *own* app-level role, not the live AD picture. Cross-referencing BloodHound later ([Section 8.5](#8-5-group-map) shows none of them are Domain Admins; their real group memberships are what actually drive the chain. Treat this dump as a *username list*, not an authority on privileges.
 
 The full dump breaks down as:
 
 | Category | Accounts |
 |---|---|
 | Built-ins | Administrator (RID 500), Guest, krbtgt |
-| **Admin-flagged in the People Directory** | `m.thompson` (1103), `c.wilson` (1105), `s.adams` (10608) — an *app-level* role the directory app assigns, **not** AD Domain Admins; their real AD groups are in [Section 8.5](#85-group-map) |
+| **Admin-flagged in the People Directory** | `m.thompson` (1103), `c.wilson` (1105), `s.adams` (10608) — an *app-level* role the directory app assigns, **not** AD Domain Admins; their real AD groups are in [Section 8.5](#8-5-group-map) |
 | Service accounts | `svc_legacy`, `svc_mssql`, `svc_files`, `svc_web`, `svc_krb_t2`, `svc_webmonitor` |
 | Regular users | ~25 accounts in `f.last` format |
 
@@ -600,7 +600,7 @@ The `[+]` line confirms the credential is domain-wide, not DC-only — and **Stu
 
 ## 7.2 Protocol Matrix
 
-With a valid domain credential, every protocol gets re-tested — not just the one that cracked (MSSQL is omitted here — port 1433 isn't open on the DC; SQL lives on a separate host and gets its own [Section 9](#9-pivot--the-hidden-sql-host) walk). First the DC:
+With a valid domain credential, every protocol gets re-tested — not just the one that cracked (MSSQL is omitted here — port 1433 isn't open on the DC; SQL lives on a separate host and gets its own [Section 9](#9-pivot-the-hidden-sql-host) walk). First the DC:
 
 ```bash
 ➜ for proto in smb ldap winrm rdp; \
@@ -816,7 +816,7 @@ With the cracked `svc_mssql:sqls3rv3r` credential, connect to the instance over 
 SQL (WESTBRIDGE\svc_mssql  guest@master)>
 ```
 
-> **Reading the mssqlclient prompt.** Format: `SQL (DOMAIN\user role@db)>`. The middle column is the **effective server role** for the connection, not the Windows identity — SQL Server reads it from the PAC the KDC minted. `guest` (default) means "no sysadmin, routed through the guest principal". After the silver ticket later ([Section 9.5](#95-silver-ticket--skipping-the-humans-entirely), our connection becomes `dbo@master>` because the forged PAC's group RID 9497 grants sysadmin. The login name in the left column never changes; only what the server thinks it's allowed to do.
+> **Reading the mssqlclient prompt.** Format: `SQL (DOMAIN\user role@db)>`. The middle column is the **effective server role** for the connection, not the Windows identity — SQL Server reads it from the PAC the KDC minted. `guest` (default) means "no sysadmin, routed through the guest principal". After the silver ticket later ([Section 9.5](#9-5-silver-ticket-skipping-the-humans-entirely), our connection becomes `dbo@master>` because the forged PAC's group RID 9497 grants sysadmin. The login name in the left column never changes; only what the server thinks it's allowed to do.
 
 Before touching anything, baseline what this login *is* and *isn't* — query by query.
 
@@ -872,7 +872,7 @@ server                         VIEW ANY DEFINITION
 
 The honest ceiling: only `CONNECT SQL`, `VIEW ANY DATABASE`, and `VIEW ANY DEFINITION`. Read-only enumeration rights — no `IMPERSONATE ANY LOGIN`, no `ALTER ANY LOGIN`, no `CONTROL SERVER`. That rules out the easy SQL privesc routes (IMPERSONATE a sysadmin login, or self-grant the role), which is why the restore-and-read path in [Section 9.7](#97-the-backup--westbridgebak) is the play, not an in-SQL escalation.
 
-That's the ceiling for this login: **not** a SQL sysadmin, the `Westbridge` DB is visible in the catalog but locked to `svc_mssql`, and the server-level rights are read-only (`CONNECT SQL` / `VIEW ANY DATABASE` / `VIEW ANY DEFINITION` only). The next questions are whether the *service* account fares any better, and who in AD actually holds `sysadmin` — which is exactly what [Section 9.3](#93-coercion-check--who-does-the-service-run-as) and [Section 9.4](#94-the-prize--westbridgemssql-maintenance) check.
+That's the ceiling for this login: **not** a SQL sysadmin, the `Westbridge` DB is visible in the catalog but locked to `svc_mssql`, and the server-level rights are read-only (`CONNECT SQL` / `VIEW ANY DATABASE` / `VIEW ANY DEFINITION` only). The next questions are whether the *service* account fares any better, and who in AD actually holds `sysadmin` — which is exactly what [Section 9.3](#9-3-coercion-check-who-does-the-service-run-as) and [Section 9.4](#94-the-prize--westbridgemssql-maintenance) check.
 
 ## 9.3 Coercion Check — Who Does the Service Run As?
 
@@ -917,7 +917,7 @@ sysadmin   WESTBRIDGE\MSSQL Maintenance
 
 `WESTBRIDGE\MSSQL Maintenance` is a **domain group**, not a local SQL principal. SQL Server's highest privilege is held by a directory object we can touch from outside the instance.
 
-That's the whole shift: in [Section 9.2](#92-mapping-the-instance) we established our own login (`svc_mssql`) is *not* sysadmin and can't grant itself the role. But here we learn sysadmin is conferred through group membership — and group membership is decided in AD, not inside SQL. So there are now two ways to become sysadmin: **own a member of `WESTBRIDGE\MSSQL Maintenance`** (a human password), **or forge a token that already claims the group** (the silver ticket in [Section 9.5](#953-forge-the-ticket) — which is exactly why `-groups 9497` there targets this group's RID). The humans are the *obvious* path; the forged-group path is the *shortcut* that skips them.
+That's the whole shift: in [Section 9.2](#9-2-mapping-the-instance) we established our own login (`svc_mssql`) is *not* sysadmin and can't grant itself the role. But here we learn sysadmin is conferred through group membership — and group membership is decided in AD, not inside SQL. So there are now two ways to become sysadmin: **own a member of `WESTBRIDGE\MSSQL Maintenance`** (a human password), **or forge a token that already claims the group** (the silver ticket in [Section 9.5](#953-forge-the-ticket) — which is exactly why `-groups 9497` there targets this group's RID). The humans are the *obvious* path; the forged-group path is the *shortcut* that skips them.
 
 Cross-referencing BloodHound:
 
@@ -1130,7 +1130,7 @@ SeCreateGlobalPrivilege       Create global objects                     Enabled
 SeIncreaseWorkingSetPrivilege Increase a process working set            Disabled
 ```
 
-`SeImpersonatePrivilege` (Enabled) is the classic Windows-service escalation primitive. Any process running as a service that can impersonate clients can be tricked into impersonating a privileged one — that's the entire "Potato" family (`Rotten`, `Juicy`, `God`..), all of which abuse it via a named-pipe / DCOM / Print-Spooler coercion. **CrystalPotato** is the flavour we drop here: it coerces an authenticated connection from the SYSTEM security context and catches it with the impersonation privilege, netting us a second shell as `NT AUTHORITY\SYSTEM`. The full primitive explanation, the tool's mechanism, and both lab runs (SQL with no AV, research web with Defender) live in [Appendix A](#appendix-a-the-seimpersonate-potato--crystalpotato).
+`SeImpersonatePrivilege` (Enabled) is the classic Windows-service escalation primitive. Any process running as a service that can impersonate clients can be tricked into impersonating a privileged one — that's the entire "Potato" family (`Rotten`, `Juicy`, `God`..), all of which abuse it via a named-pipe / DCOM / Print-Spooler coercion. **CrystalPotato** is the flavour we drop here: it coerces an authenticated connection from the SYSTEM security context and catches it with the impersonation privilege, netting us a second shell as `NT AUTHORITY\SYSTEM`. The full primitive explanation, the tool's mechanism, and both lab runs (SQL with no AV, research web with Defender) live in [Appendix A](#appendix-a-the-seimpersonate-potato-crystalpotato).
 
 We pull it down over the existing `svc_mssql` shell. Start the *second* listener on `9295` first — this callback is the SYSTEM one, distinct from the `9294` shell:
 
@@ -1193,9 +1193,9 @@ Mode                 LastWriteTime         Length Name
 -a----   7/3/2026   6:16 PM   3067904   Westbridge.bak
 ```
 
-The custom `Westbridge` database — the one every login was locked out of back in [Section 9.2](#92-mapping-the-instance) — sitting as a raw `.bak`.
+The custom `Westbridge` database — the one every login was locked out of back in [Section 9.2](#9-2-mapping-the-instance) — sitting as a raw `.bak`.
 
-`RESTORE DATABASE` is executed by the **SQL Server engine**, not our client prompt, and the engine reads the backup off disk **as the service account** (`svc_mssql` here — proven by the [Section 9.3](#93-coercion-check--who-does-the-service-run-as) `xp_dirtree` callback). `C:\backup` is a restricted folder whose ACL doesn't grant that account read, so a direct `RESTORE ... FROM 'C:\backup\Westbridge.bak'` dies with **OS error 5 (Access is denied)**. Step one: copy it somewhere world-readable.
+`RESTORE DATABASE` is executed by the **SQL Server engine**, not our client prompt, and the engine reads the backup off disk **as the service account** (`svc_mssql` here — proven by the [Section 9.3](#9-3-coercion-check-who-does-the-service-run-as) `xp_dirtree` callback). `C:\backup` is a restricted folder whose ACL doesn't grant that account read, so a direct `RESTORE ... FROM 'C:\backup\Westbridge.bak'` dies with **OS error 5 (Access is denied)**. Step one: copy it somewhere world-readable.
 
 ```powershell
 PS > copy C:\Backup\Westbridge.bak C:\Users\Public\
@@ -1220,7 +1220,7 @@ Westbridge       C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL
 Westbridge_log   C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\Westbridge_log.ldf   L      NULL            8388608   2199023255552        2           0         0   3D927A21-0A54-4071-9119-88CA96FE5B6B             0              0                   0              4096             0           NULL                     0   00000000-0000-0000-0000-000000000000            0           1            NULL   NULL
 ```
 
-Two logical files: `Westbridge` (data, type `D`) and `Westbridge_log` (log, type `L`). Now restore to a **fresh database name** (`Westbridge_Restore`) rather than over the existing `Westbridge` — the live DB rejected `svc_mssql` in [Section 9.2](#92-mapping-the-instance), and a fresh copy sidesteps that lockout. Each logical file is redirected to a new path via `WITH MOVE`, and `REPLACE` overwrites any stub:
+Two logical files: `Westbridge` (data, type `D`) and `Westbridge_log` (log, type `L`). Now restore to a **fresh database name** (`Westbridge_Restore`) rather than over the existing `Westbridge` — the live DB rejected `svc_mssql` in [Section 9.2](#9-2-mapping-the-instance), and a fresh copy sidesteps that lockout. Each logical file is redirected to a new path via `WITH MOVE`, and `REPLACE` overwrites any stub:
 
 ```bash
 SQL (WESTBRIDGE\svc_mssql  dbo@master)> RESTORE DATABASE Westbridge_Restore FROM DISK = 'C:\Users\Public\Westbridge.bak' WITH MOVE 'Westbridge' TO 'C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\Westbridge_Restore.mdf', MOVE 'Westbridge_log' TO 'C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\Westbridge_Restore_log.ldf', REPLACE;
@@ -1274,7 +1274,7 @@ And look who that is: **m.thompson — IT Tier1 Support and MSSQL Maintenance, t
 
 # 11. Mapping the OUs — Who Lives Where
 
-With m.thompson's password in hand, it's worth stepping back and reading the domain's organizational structure properly. The BloodHound graphs in this section come from the single domain-wide collection we ran as `svc_mssql` back in [Section 7.3](#73-bloodhound-collection) — that dump already surfaces both the OU rosters (who lives in IT TIER1, IT TIER2, IT TIER3, and STUDENTS) *and* m.thompson's own group memberships and outbound edges. A domain user's own object is readable by any authenticated principal, so there's no need to re-run BloodHound as m.thompson; the [Section 7.3](#73-bloodhound-collection) data already contains his picture. We show that picture in [Section 11.1](#111-the-mthompson-picture) now because it's the key to the next move.
+With m.thompson's password in hand, it's worth stepping back and reading the domain's organizational structure properly. The BloodHound graphs in this section come from the single domain-wide collection we ran as `svc_mssql` back in [Section 7.3](#7-3-bloodhound-collection) — that dump already surfaces both the OU rosters (who lives in IT TIER1, IT TIER2, IT TIER3, and STUDENTS) *and* m.thompson's own group memberships and outbound edges. A domain user's own object is readable by any authenticated principal, so there's no need to re-run BloodHound as m.thompson; the [Section 7.3](#7-3-bloodhound-collection) data already contains his picture. We show that picture in [Section 11.1](#111-the-mthompson-picture) now because it's the key to the next move.
 
 BloodHound's OU view is the map of *who lives where*:
 
@@ -1303,7 +1303,7 @@ Outbound object control (the interesting part):
 With GenericAll over the STUDENTS OU, m.thompson can move any object in or out of that OU — including users from other tiers. The two Tier-1 operators we'll relocate into STUDENTS territory (both about to get moved into space we already own):
 
 * **r.anderson** ➜ File Server Support ➜ the **Scripts** share on FILES that `svc_mssql` couldn't touch (`IT-Share` is locked tighter — that one comes later, via a different path)
-* **c.wilson** ➜ Account Policy Administrators ➜ can write *account-policy attributes* on IT-Tier members (the logonHours reset we'll pull off in Section [15.3](#153-why-invalid-logon-hours--time-based-access-control) runs through this group)
+* **c.wilson** ➜ Account Policy Administrators ➜ can write *account-policy attributes* on IT-Tier members (the logonHours reset we'll pull off in Section [15.3](#15-3-why-invalid-logon-hours-time-based-access-control) runs through this group)
 
 ### 11.1.1 IT TIER1 — the operators
 
@@ -1317,7 +1317,7 @@ The two accounts the graph surfaces as Tier1 neighbors:
 ![BloodHound — c.wilson memberof](/assets/images/westbridge-bh-cwilson-memberof.png)
 
 * **r.anderson** — Member of the **File Server Support Group** — runs the Scripts share on FILES
-* **c.wilson** — Member of the **Account Policy Administrators Group** — writes account-policy attributes (e.g. logonHours) on members; the actual exploitation comes in Section [15.3](#153-why-invalid-logon-hours--time-based-access-control).
+* **c.wilson** — Member of the **Account Policy Administrators Group** — writes account-policy attributes (e.g. logonHours) on members; the actual exploitation comes in Section [15.3](#15-3-why-invalid-logon-hours-time-based-access-control).
 
 m.thompson is also a Tier1 operator (his full group memberships are broken out in [Section 11.1](#111-the-mthompson-picture) — and he holds **GenericAll over the entire STUDENTS OU**, which is the wedge we exploit in a moment). Tier1 = the people who run day-to-day services — file servers and databases.
 
@@ -1331,7 +1331,7 @@ The three provisioners who staff this tier:
 
 * **b.wellington** — Tier 2 provisioner
 * **c.anderson** — Tier 2 provisioner
-* **s.harrison** — Tier 2 provisioner (helpdesk-level; his restricted logon hours become relevant in [Section 15.3](#153-why-invalid-logon-hours--time-based-access-control), and his group memberships are broken out in [Section 15.5](#155-who-is-sharrison)
+* **s.harrison** — Tier 2 provisioner (helpdesk-level; his restricted logon hours become relevant in [Section 15.3](#15-3-why-invalid-logon-hours-time-based-access-control), and his group memberships are broken out in [Section 15.5](#155-who-is-sharrison)
 
 ### 11.1.3 IT TIER3 — the admins
 
@@ -1343,11 +1343,11 @@ The three admins who staff this tier:
 
 ![BloodHound — a.owen memberof](/assets/images/westbridge-bh-aowen-memberof.png)
 
-* **a.owen** — Member of the **CA-Manager Group** — controls the enterprise CA that signs every TLS cert in the domain. We explain the full CA-Manager exploitation path (ESC4 on the certificate template, ESC4 ➜ privileged certificate ➜ DC compromise) in [Section 17](#17-privesc-dc01--esc4-on-the-ca).
+* **a.owen** — Member of the **CA-Manager Group** — controls the enterprise CA that signs every TLS cert in the domain. We explain the full CA-Manager exploitation path (ESC4 on the certificate template, ESC4 ➜ privileged certificate ➜ DC compromise) in [Section 17](#17-privesc-dc01-esc4-on-the-ca).
 * **b.jones** — Domain Users only — no special groups.
 * **d.hoff** — Domain Users only — no special groups.
 
-The external controller for this tier — the account that holds GenericAll over IT TIER3 — isn't visible in the OU graph above. It's flagged as an anomaly in [Section 8.4](#84-non-default-acl-edges) (RID 9510) and resolved in [Section 16.4](#164-jdillon-it-tier3-aowen): it turns out to be **j.dillon**, an AD tombstone we revive. The full Tier-3 exploitation chain (j.dillon's GenericAll ➜ a.owen's password reset ➜ CA administration) is covered there.
+The external controller for this tier — the account that holds GenericAll over IT TIER3 — isn't visible in the OU graph above. It's flagged as an anomaly in [Section 8.4](#8-4-non-default-acl-edges) (RID 9510) and resolved in [Section 16.4](#164-jdillon-it-tier3-aowen): it turns out to be **j.dillon**, an AD tombstone we revive. The full Tier-3 exploitation chain (j.dillon's GenericAll ➜ a.owen's password reset ➜ CA administration) is covered there.
 
 Tier 3 is the CA's front door. We keep it simple here and come back for the full chain later.
 
@@ -1361,7 +1361,7 @@ A dozen-plus student accounts — and per our earlier ACL mining, **m.thompson h
 
 > Active Directory rule of thumb: Rights live on containers, not people. If you can't hack the user, just pick up their house and move it somewhere you control.
 
-First, validate the cracked password estate-wide (the BloodHound data from [Section 7.3](#73-bloodhound-collection) already covers m.thompson's perspective, so no re-collection is needed):
+First, validate the cracked password estate-wide (the BloodHound data from [Section 7.3](#7-3-bloodhound-collection) already covers m.thompson's perspective, so no re-collection is needed):
 
 ```bash
 ➜ nxc smb 10.0.10.0/24 \
@@ -1373,7 +1373,7 @@ SMB         10.0.10.15      445    FILES            [+] westbridge.hsm\m.thompso
 SMB         10.0.10.5       445    DC               [+] westbridge.hsm\m.thompson:Pa$$w0rd
 ```
 
-Password estate-wide: `Pa$$w0rd` authenticates to both FILES and DC. We don't need a fresh BloodHound collection here — the [Section 7.3](#73-bloodhound-collection) dump already captured m.thompson's group memberships and outbound edges, since a domain user's own object is readable by any authenticated principal. What we *do* need is the raw ACL on the OU itself, which BloodHound abstracts away; that's why we go straight to PowerView/bloodyAD below to read the exact ACEs m.thompson holds on IT TIER1:
+Password estate-wide: `Pa$$w0rd` authenticates to both FILES and DC. We don't need a fresh BloodHound collection here — the [Section 7.3](#7-3-bloodhound-collection) dump already captured m.thompson's group memberships and outbound edges, since a domain user's own object is readable by any authenticated principal. What we *do* need is the raw ACL on the OU itself, which BloodHound abstracts away; that's why we go straight to PowerView/bloodyAD below to read the exact ACEs m.thompson holds on IT TIER1:
 
 Before touching anything, dump the ACLs on the IT TIER1 OU — and here's the twist that makes this lab clever. m.thompson does **not** hold GenericAll there:
 
@@ -1449,7 +1449,7 @@ OWNER: WRITE
 DACL: WRITE
 ```
 
-`WRITE` on r.anderson and c.wilson bundles the rename + move rights. `CREATE_CHILD; WRITE` plus `OWNER: WRITE` and `DACL: WRITE` on STUDENTS is full control — that's the GenericAll inheritance we spotted in [Section 8.4](#84-non-default-acl-edges).
+`WRITE` on r.anderson and c.wilson bundles the rename + move rights. `CREATE_CHILD; WRITE` plus `OWNER: WRITE` and `DACL: WRITE` on STUDENTS is full control — that's the GenericAll inheritance we spotted in [Section 8.4](#8-4-non-default-acl-edges).
 
 Rename, move, delete — but **no password-reset right yet**. The WriteProperty ACEs let m.thompson rename users and tweak a few attributes; they don't let him reset passwords. The move itself is a single LDAP operation: rewrite the user's `distinguishedName` and AD treats it as a move, removing the object from the source and recreating it in the destination. That operation is gated by the DC checking that the caller holds DeleteChild on the source container **and** CreateChild on the destination. m.thompson has both ends of that transaction: DeleteChild on IT Tier1, and CreateChild (inherited from GenericAll) on STUDENTS. So the same `distinguishedName` write that was blocked for password-reset purposes in IT Tier1 now goes through — because the move drops the targets under an OU whose ACLs actually permit the subsequent `unicodePwd` write, not because relocation by itself confers password rights.
 
@@ -1523,7 +1523,7 @@ Second reset: c.wilson, same shape, next command:
 Two target users relocated, zero password-guessing:
 
 * **r.anderson** — File Server Support ➜ should unlock the `Scripts` share
-  that rejected every account we own (the `IT-Share` only opens later, at [Section 14.1](#141-the-ssh-key-sitting-in-the-backup), once we hold local admin on FILES)
+  that rejected every account we own (the `IT-Share` only opens later, at [Section 14.1](#14-1-the-ssh-key-sitting-in-the-backup), once we hold local admin on FILES)
 * **c.wilson** — Account Policy Administrators ➜ account-policy control for later abuse
 
 The whole stage is one idea: **ACLs attach to containers and inherit downward.** You don't always need to escalate *against* an object — sometimes you just relocate the object into territory you already own.
@@ -1740,13 +1740,13 @@ Write-Host "Monitoring completed - Service: svc_webmonitor" -ForegroundColor Cya
 
 Three facts stacked:
 
-1. It runs **every 60 seconds**, scheduled, as **`svc_webmonitor`** — the account BloodHound flagged with **AddKeyCredentialLink on `svc_files`** ([Section 8.4](#84-non-default-acl-edges). That was always the designed chain: own `svc_webmonitor` ➜ Shadow Credential on `svc_files` ➜ S4U constrained delegation ➜ SYSTEM-equivalent on FILES.
+1. It runs **every 60 seconds**, scheduled, as **`svc_webmonitor`** — the account BloodHound flagged with **AddKeyCredentialLink on `svc_files`** ([Section 8.4](#8-4-non-default-acl-edges). That was always the designed chain: own `svc_webmonitor` ➜ Shadow Credential on `svc_files` ➜ S4U constrained delegation ➜ SYSTEM-equivalent on FILES.
 2. `-UseDefaultCredentials` attaches the running account's Negotiate/NTLM auth to every HTTP request. Whoever answers receives `svc_webmonitor`'s authentication material.
 3. The three targets are **FQDNs** — so classic LLMNR/NBNS poisoning won't fire (Windows resolves them via DNS, no broadcast fallback). We must control what DNS says.
 
 ## 12.3 The Account Behind the Script — svc_webmonitor
 
-The script header says `Service Account: svc_webmonitor`, but BloodHound's graph for the *owning* account — the one with the AddKeyCredentialLink edge that makes this whole chain worthwhile — is worth seeing now rather than waiting for Section 13. Two images, both already introduced in [Section 8.4](#84-non-default-acl-edges) but central enough to repeat here:
+The script header says `Service Account: svc_webmonitor`, but BloodHound's graph for the *owning* account — the one with the AddKeyCredentialLink edge that makes this whole chain worthwhile — is worth seeing now rather than waiting for Section 13. Two images, both already introduced in [Section 8.4](#8-4-non-default-acl-edges) but central enough to repeat here:
 
 ![BloodHound — svc_webmonitor outbound: AddKeyCredentialLink on svc_files + cert template enrollment](/assets/images/westbridge-bh-svcwebmonitor-outbound.png)
 
@@ -1762,7 +1762,7 @@ The script header says `Service Account: svc_webmonitor`, but BloodHound's graph
 Two things stand out:
 
 1. **svc_webmonitor is NOT svc_web.** The next section, [Section 12.4](#124-who-is-svc_web), shows svc_web's graph — a different account (RID 9506 vs RID 9521), with different edges. svc_web holds Enroll on the same cert templates but has *no* AddKeyCredentialLink on svc_files. The script runs as svc_webmonitor; the coercion captures svc_webmonitor's NTLM; the Shadow Credential edge belongs to svc_webmonitor. Keep the accounts straight.
-2. **The AddKeyCredentialLink ➜ svc_files edge is the whole point.** Everything else in this section (DNS hijack, hash capture, crack) is prep work to unlock that one edge. Once we have svc_webmonitor's password, certipy shadow auto does the rest in one command — and svc_files's constrained delegation to FILES$ ([Section 8.3](#83-delegation) turns that into SYSTEM-equivalent on the file server.
+2. **The AddKeyCredentialLink ➜ svc_files edge is the whole point.** Everything else in this section (DNS hijack, hash capture, crack) is prep work to unlock that one edge. Once we have svc_webmonitor's password, certipy shadow auto does the rest in one command — and svc_files's constrained delegation to FILES$ ([Section 8.3](#8-3-delegation) turns that into SYSTEM-equivalent on the file server.
 
 > **RID detail:** svc_webmonitor is RID 9521. svc_web is RID 9506. Both are in the 9500+ range (domain's service account band), both have "password never expires" since the domain build, and both enrolled on the same cert templates — but only svc_webmonitor holds the key-trust edge. The lab makes you tell them apart.
 
@@ -1911,7 +1911,7 @@ SVC_WEBMONITOR::WESTBRIDGE:27768ca47d2e4084:dac3b95d74a0b36878d5c1e9552d9a5a:010
 
 > Shadow Credentials: write a key to the door, kinit your way in, and let S4U do the rest. The machine account never knew it was holding your TGT.
 
-The two BloodHound edges we've been carrying since [Section 8.4](#84-non-default-acl-edges) finally connect into one path. Let's read them properly:
+The two BloodHound edges we've been carrying since [Section 8.4](#8-4-non-default-acl-edges) finally connect into one path. Let's read them properly:
 
 ## 13.1 Edge #1 — AddKeyCredentialLink
 
@@ -1965,7 +1965,7 @@ SMB         10.0.10.15      445    FILES            [+] westbridge.hsm\svc_webmo
 SMB         10.0.10.5       445    DC               [+] westbridge.hsm\svc_webmonitor:eazypassword
 ```
 
-The cracked password authenticates to both FILES and the DC over SMB, so `svc_webmonitor` is a live, reachable account — exactly what we need before exercising its AddKeyCredentialLink right on `svc_files`. (The constrained-delegation trust that powers the second half of this chain is already proven by the BloodHound edge in [Section 13.2](#132-edge-2--constrained-delegation-to-files); we don't need a separate delegation query to confirm it.)
+The cracked password authenticates to both FILES and the DC over SMB, so `svc_webmonitor` is a live, reachable account — exactly what we need before exercising its AddKeyCredentialLink right on `svc_files`. (The constrained-delegation trust that powers the second half of this chain is already proven by the BloodHound edge in [Section 13.2](#13-2-edge-2-constrained-delegation-to-files); we don't need a separate delegation query to confirm it.)
 
 **Step 1 — plant the shadow credential.** Certipy's `shadow auto` does the whole loop: generate a key pair + DeviceID ➜ append it to `svc_files`'s `msDS-KeyCredentialLink` (exercising our AddKeyCredentialLink right) ➜ PKINIT-authenticate as `svc_files` using the new cert ➜ fetch a TGT ➜ then read the account's NT hash out of the PAC *inside that TGT* (a bonus of Key Trust logons) ➜ finally restore the original attribute, leaving no visible key residue:
 
@@ -2444,9 +2444,9 @@ Flag03[WEB_XXXXX_XXX_Backup]
 
 ![BloodHound — m.thompson GenericAll over the STUDENTS OU](/assets/images/westbridge-bh-mthompson-genericall-students.png)
 
-Ref: [Section 8.4](#84-non-default-acl-edges)
+Ref: [Section 8.4](#8-4-non-default-acl-edges)
 
-This is the elegant path, and it's pure AD-on-Linux — and it was a *first-class* option from the moment we had the [Section 7.3 BloodHound collection](#73-bloodhound-collection): m.thompson's GenericAll over the STUDENTS OU already showed we could create users there, and the WEB box's SSSD `ksu` behavior is visible the instant you look at how the lab joins Linux to the domain. The lab may have intended this as a bonus, but recon surfaced it as directly as any other edge. m.thompson still holds GenericAll over the Students OU — which means **creating brand-new domain users** in it:
+This is the elegant path, and it's pure AD-on-Linux — and it was a *first-class* option from the moment we had the [Section 7.3 BloodHound collection](#7-3-bloodhound-collection): m.thompson's GenericAll over the STUDENTS OU already showed we could create users there, and the WEB box's SSSD `ksu` behavior is visible the instant you look at how the lab joins Linux to the domain. The lab may have intended this as a bonus, but recon surfaced it as directly as any other edge. m.thompson still holds GenericAll over the Students OU — which means **creating brand-new domain users** in it:
 
 ```bash
 ➜ bloodyAD --host dc.westbridge.hsm -d westbridge.hsm -i 10.0.10.5 \
@@ -2457,7 +2457,7 @@ This is the elegant path, and it's pure AD-on-Linux — and it was a *first-clas
 [+] root created
 ```
 
-*`bloodyAD add user root` exercises the CreateChild right m.thompson inherited over the STUDENTS OU — proven earlier in [Section 11.2](#112-execution--rights-live-on-containers-not-people) via `get writable` (`CREATE_CHILD; WRITE` on `OU=STUDENTS`). We mint a domain account named `root` so the WEB box's `ksu` can later map it onto the local `root`.*
+*`bloodyAD add user root` exercises the CreateChild right m.thompson inherited over the STUDENTS OU — proven earlier in [Section 11.2](#11-2-execution-rights-live-on-containers-not-people) via `get writable` (`CREATE_CHILD; WRITE` on `OU=STUDENTS`). We mint a domain account named `root` so the WEB box's `ksu` can later map it onto the local `root`.*
 
 Now, from the *unprivileged* svc_web shell on WEB — no sudo involved:
 
@@ -2482,7 +2482,7 @@ Why this works: the box is domain-joined with SSSD, and `ksu` authorizes a Kerbe
 
 ## 14.6 Bonus Loot — Keytabs Everywhere
 
-Root on WEB means linpeas runs with eyes. (One incidental note from the SUID sweep: `/usr/bin/ksu.mit` is present on the box — the exact binary the [Section 14.5](#145-kerberos-as-the-privilege-escalation) `ksu` privesc rode on — but a setuid sweep is unnecessary here since we're already root by two independent paths.) The real loot signal is linpeas' Kerberos section:
+Root on WEB means linpeas runs with eyes. (One incidental note from the SUID sweep: `/usr/bin/ksu.mit` is present on the box — the exact binary the [Section 14.5](#14-5-kerberos-as-the-privilege-escalation) `ksu` privesc rode on — but a setuid sweep is unnecessary here since we're already root by two independent paths.) The real loot signal is linpeas' Kerberos section:
 
 ### 14.6.1 linpeas
 
@@ -2653,11 +2653,11 @@ SMB         dc.westbridge.hsm 445    DC               [*] Windows 11 / Server 20
 SMB         dc.westbridge.hsm 445    DC               [+] WESTBRIDGE.HSM\svc_krb_t2 from ccache
 ```
 
-*We point nxc at the DC with `-k --use-kcache` and the named ccache. It authenticates as `WESTBRIDGE.HSM\svc_krb_t2` with no password ever cracked. This keytab is the bridge into [Section 15](#15-helpdesk-ws--the-tier-2-play) (HELPDESK-WS).*
+*We point nxc at the DC with `-k --use-kcache` and the named ccache. It authenticates as `WESTBRIDGE.HSM\svc_krb_t2` with no password ever cracked. This keytab is the bridge into [Section 15](#15-helpdesk-ws-the-tier-2-play) (HELPDESK-WS).*
 
 A full Kerberos identity for a Tier-2 account, no password ever cracked. The keytab primitive is covered in depth in [Cerberus in a File](/kerberos/cerberus-in-a-file/); who `svc_krb_t2` is and why it held GenericAll over IT TIER2 is covered where the account is first weaponised, in [Section 15.2](#152-svc_krb_t2-mints-itself-an-ou).
 
-So [Section 14](#14-web--ssh-key--cron--and-a-kerberos-shortcut) ends with two independent routes to `root` on WEB *and* a third, quieter prize — a Tier-2 Kerberos identity that needs no cracking and no expiry. That keytab is what turns [Section 15](#15-helpdesk-ws--the-tier-2-play) from "we have a lead" into "we have the account."
+So [Section 14](#14-web-ssh-key-cron-and-a-kerberos-shortcut) ends with two independent routes to `root` on WEB *and* a third, quieter prize — a Tier-2 Kerberos identity that needs no cracking and no expiry. That keytab is what turns [Section 15](#15-helpdesk-ws-the-tier-2-play) from "we have a lead" into "we have the account."
 
 ## 14.8 Where This Leaves Us
 
@@ -2676,7 +2676,7 @@ Live threads into the endgame: `supportportal.westbridge.hsm` (new SPN), the **R
 
 ## 15.1 Scanning the Hidden Workstation
 
-The hostname brute in [Section 8.2](#82-hosts-that-never-appeared-on-the-wire) already gave us the address; now it gets its scan:
+The hostname brute in [Section 8.2](#8-2-hosts-that-never-appeared-on-the-wire) already gave us the address; now it gets its scan:
 
 ```bash
 PORT     STATE SERVICE       REASON  VERSION
@@ -2724,7 +2724,7 @@ Exactly what a workstation should look like: **RDP + WinRM only**. No web, no da
 
 ## 15.2 svc_krb_t2 Mints Itself an OU
 
-The keytab identity from [Section 14.6](#146-bonus-loot--keytabs-everywhere) holds GenericAll over the IT TIER2 OU — but group membership alone doesn't put anyone in front of HELPDESK-WS. First, exercise that GenericAll into explicit ACE form (belt-and-braces for tooling that checks object ACLs rather than group rights):
+The keytab identity from [Section 14.6](#14-6-bonus-loot-keytabs-everywhere) holds GenericAll over the IT TIER2 OU — but group membership alone doesn't put anyone in front of HELPDESK-WS. First, exercise that GenericAll into explicit ACE form (belt-and-braces for tooling that checks object ACLs rather than group rights):
 
 `svc_krb_t2` holds GenericAll over the IT TIER2 OU — delegated rights that outlived the automation that justified them. That's the same pattern our whole chain keeps hitting: the deprecated proxy config ([Section 3.1](#31-information-disclosure--people-directoryconfbak)), the never-rotated machine password (`ad_maximum_machine_account_password_age = 0`), and now a forgotten provisioning identity with total control over a tier boundary.
 
@@ -2776,7 +2776,7 @@ AD accounts carry a **`logonHours` attribute**: 21 bytes = 168 bits, one bit per
 
 And we were attacking at the wrong time of day. Password right, logon refused anyway: `STATUS_INVALID_LOGON_HOURS`.
 
-Who fixes logon-hour policies? The group we've been sitting next to since [Section 11](#11-mapping-the-ous--who-lives-where):
+Who fixes logon-hour policies? The group we've been sitting next to since [Section 11](#11-mapping-the-ous-who-lives-where):
 
 ![BloodHound — Account Policy Administrators control IT Tier2 settings incl. logon restrictions](/assets/images/westbridge-bh-accountpolicy-logonhours.png)
 
@@ -2881,7 +2881,7 @@ Lesson: binary AD attributes like `logonHours` (syntax **OctetString**) reject b
 
 BloodHound shows s.harrison sitting in two groups that matter for this engagement:
 
-* **Helpdesk Technicians** — the helpdesk-tier identity, consistent with a Tier-2 provisioner account that's been provisioned conservatively (limited logon hours, standard-user defaults). This is the group s.harrison sat in when the `logonHours` restriction bit us in [Section 15.3](#153-why-invalid-logon-hours--time-based-access-control).
+* **Helpdesk Technicians** — the helpdesk-tier identity, consistent with a Tier-2 provisioner account that's been provisioned conservatively (limited logon hours, standard-user defaults). This is the group s.harrison sat in when the `logonHours` restriction bit us in [Section 15.3](#15-3-why-invalid-logon-hours-time-based-access-control).
 * **HelpDesk Workstation Admins** — the door key. This group exists precisely to administer machines like `HELPDESK-WS$` (10.0.10.25 — RDP/WinRM only). It's what turns a valid helpdesk credential into a workstation foothold.
 
 The BloodHound graph also shows s.harrison's outbound edges — limited for a helpdesk-tier account, but the Workstation Admins membership is the one that matters.
@@ -2993,7 +2993,7 @@ C:\USERS\S.HARRISON
 \---Pictures
 ```
 
-The only thing of interest on the desktop is **`Support Portal.url`** — the portal shortcut that becomes the [Section 15.7](#157-looking-around--the-support-portal) thread. (The rest of the profile — Contacts, Documents, Downloads, Favorites, Pictures — is empty.)
+The only thing of interest on the desktop is **`Support Portal.url`** — the portal shortcut that becomes the [Section 15.7](#15-7-looking-around-the-support-portal) thread. (The rest of the profile — Contacts, Documents, Downloads, Favorites, Pictures — is empty.)
 
 ```bash
 PS C:\support> tree Scripts Tools /a /f
@@ -3044,7 +3044,7 @@ The helpdesk toolbox (`C:\Support\Scripts\`) is full of AD one-liners — `Unloc
 ➜ xfreerdp3 /u:'s.harrison' /v:10.0.10.25 /p:'SecretMyth123!' /dynamic-resolution +clipboard
 ```
 
-The workstation's filesystem is the helpdesk toolbox we already mapped ([Section 14.6.1](#1461-linpeas)) — but the item that matters for what's next is on s.harrison's **desktop: the Support Portal shortcut**. The `HTTP/supportportal.westbridge.hsm` SPN we first found in WEB's keytab ([Section 14.6](#146-bonus-loot--keytabs-everywhere) finally gets a face — reached here over RDP as s.harrison, not via the `WEB$` keytab.
+The workstation's filesystem is the helpdesk toolbox we already mapped ([Section 14.6.1](#1461-linpeas)) — but the item that matters for what's next is on s.harrison's **desktop: the Support Portal shortcut**. The `HTTP/supportportal.westbridge.hsm` SPN we first found in WEB's keytab ([Section 14.6](#14-6-bonus-loot-keytabs-everywhere) finally gets a face — reached here over RDP as s.harrison, not via the `WEB$` keytab.
 
 RDP session, portal sign-in as s.harrison:
 
@@ -3062,7 +3062,7 @@ Read this against everything we know:
 * They're trying to join a **cross-domain group** ("Research Web Operations"), and the failure is pure **AD group-scope mechanics**: a Global group can't contain members from another domain; Global ➜ Universal ➜ Domain Local is exactly the migration path for making a group accept cross-domain members.
 * Harrison's answer isn't small talk — it's a **roadmap**. Somewhere in the directory there is a group whose scope is mid-conversion (or about to be), and once it lands at Domain Local, accounts from the research forest can walk into `westbridge.hsm` through it.
 
-That's the endgame thread: the trust we flagged in [Section 8.1](#81-a-second-forest), the `researchoperator` oddball from [Section 4.2](#42-what-we-got), and this chat are all pointing at the same door. When we're ready to cross into the research forest, the entry ticket may literally be a group-scope change — and the lab's own helpdesk tickets hint at it too, with one thread referencing the very logon-hours restriction we just cleared, the stories quietly matching their mechanics.
+That's the endgame thread: the trust we flagged in [Section 8.1](#8-1-a-second-forest), the `researchoperator` oddball from [Section 4.2](#4-2-what-we-got), and this chat are all pointing at the same door. When we're ready to cross into the research forest, the entry ticket may literally be a group-scope change — and the lab's own helpdesk tickets hint at it too, with one thread referencing the very logon-hours restriction we just cleared, the stories quietly matching their mechanics.
 
 **Flag 4 captured.** Three hosts fully owned, the fourth (DC) authenticated-into half a dozen ways — and every step of this stage was pure directory manipulation: no exploit, no brute force, just the domain's own permission model used exactly as designed, by someone it was never meant to let in.
 
@@ -3300,7 +3300,7 @@ The updated graph shows a.pherson's restored control — GenericWrite over the l
 
 ![BloodHound — a.pherson GenericWrite post-restore (j.dillon visible)](/assets/images/westbridge-bh-apherson-generic-updated.png)
 
-And j.dillon is the prize of the three: **GenericAll over the IT TIER3 OU** — the privileged tier we flagged back in [Section 8.4](#84-non-default-acl-edges) as controlled by a "hidden" account. The hidden account was an AD tombstone. We revived it into Tier 3:
+And j.dillon is the prize of the three: **GenericAll over the IT TIER3 OU** — the privileged tier we flagged back in [Section 8.4](#8-4-non-default-acl-edges) as controlled by a "hidden" account. The hidden account was an AD tombstone. We revived it into Tier 3:
 
 ![BloodHound — j.dillon GenericAll over IT TIER3](/assets/images/westbridge-bh-jdillion-genericall-tier3.png)
 
@@ -3365,7 +3365,7 @@ Certipy v5.1.0 - by Oliver Lyak (ly4k)
 
 ![BloodHound — a.owen memberships incl. CA-MANAGER + cert template enrollment](/assets/images/westbridge-bh-aowen-outbound.png)
 
-**a.owen is a member of CA-MANAGER** — administration over the `CA01-AD-CA` enterprise CA that's been in every TLS cert since [Section 1.2](#12-port-scans) — plus Enroll rights across the certificate templates. Tier 3 was the CA's front door all along.
+**a.owen is a member of CA-MANAGER** — administration over the `CA01-AD-CA` enterprise CA that's been in every TLS cert since [Section 1.2](#1-2-port-scans) — plus Enroll rights across the certificate templates. Tier 3 was the CA's front door all along.
 
 The chain in one line: *default password ➜ kpasswd bypass ➜ lifecycle rights ➜ tombstone restore ➜ shadow credential ➜ Tier-3 password reset ➜ CA administration.* Every link was already in the directory; we just followed the resurrection trail.
 
@@ -3669,9 +3669,9 @@ SMB         dc.westbridge.hsm 445    DC               [+] Dumped 48 NTDS hashes 
 
 Three details in this dump are worth their weight:
 
-* **`j.dillon` at RID 9510** — the "hidden account" from [Section 8.4](#84-non-default-acl-edges), finally resolved by cryptographic evidence rather than inference. Its restored peers `t.dixon` (9511) and `a.collins` (9512) sit right next to it in RID order.
-* **`root` at RID 11601** — our own creation from [Section 14.3](#145-kerberos-as-the-privilege-escalation). The AD user we minted to pivot into Linux root now lives permanently in the NTDS. In a real engagement, this is an IoC you must clean up; here, it's just a receipt of our work.
-* **`WBRESEARCH$` at RID 9518** — the inter-realm trust account sitting inside this domain's NTDS. Its secret is the shared key both KDCs use to encrypt cross-realm referrals—file this away for [Section 18.3](#184-cross-realm-tickets--how-the-trust-actually-works) and [Section 19.6](#196-s4u-as-administrator-dcsync-flag07).
+* **`j.dillon` at RID 9510** — the "hidden account" from [Section 8.4](#8-4-non-default-acl-edges), finally resolved by cryptographic evidence rather than inference. Its restored peers `t.dixon` (9511) and `a.collins` (9512) sit right next to it in RID order.
+* **`root` at RID 11601** — our own creation from [Section 14.3](#14-5-kerberos-as-the-privilege-escalation). The AD user we minted to pivot into Linux root now lives permanently in the NTDS. In a real engagement, this is an IoC you must clean up; here, it's just a receipt of our work.
+* **`WBRESEARCH$` at RID 9518** — the inter-realm trust account sitting inside this domain's NTDS. Its secret is the shared key both KDCs use to encrypt cross-realm referrals—file this away for [Section 18.3](#18-4-cross-realm-tickets-how-the-trust-actually-works) and [Section 19.6](#19-6-s4u-as-administrator-dcsync-flag07).
 
 And, of course, the dump yields the home forest's `krbtgt` hash — golden tickets for `westbridge.hsm` are mintable on demand from here on out.
 
@@ -3823,7 +3823,7 @@ ligolo-ng » start
 
 Operational Note: If your WinRM session dies mid-tunnel, the Ligolo agent can recover cleanly—but only if you drop the DC's firewall profiles first (`Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled False`). Otherwise, the Windows Firewall will silently eat the reconnects.
 
-One host in the range didn't need that dance: SQL (`10.0.10.20`, the [Section 9.6](#96-system-on-sql) hop) had Defender installed but real-time protection never enabled — an admin oversight, not a design choice. Every other Windows box in the range (DC01, the research WEB server, and the research DC02) had it running and needed the explicit disable above before anything landed on disk.
+One host in the range didn't need that dance: SQL (`10.0.10.20`, the [Section 9.6](#9-6-system-on-sql) hop) had Defender installed but real-time protection never enabled — an admin oversight, not a design choice. Every other Windows box in the range (DC01, the research WEB server, and the research DC02) had it running and needed the explicit disable above before anything landed on disk.
 
 With the tunnel up, `nmap` and `nxc` can hit the new subnet natively:
 
@@ -3837,7 +3837,7 @@ SMB         10.0.20.10      445    WEB              [*] Windows 11 / Server 2025
 SMB         10.0.20.5       445    NONE             [*]  x64 (name:) (domain:) (signing:True) (SMBv1:False)
 ```
 
-DC02 prints as `NONE` because nxc's anonymous SMB bind was refused — the forest blocks null-session enumeration (consistent with the `.eml` note that NTLM is disabled for domain auth in `westbridge-research.hsm`), so it has no name or domain to display. WEB prints normally because null-auth *is* allowed there. (We'll get our shell on DC02 later via S4U — the AES256 key exfiltrated from research-WEB's LSA secrets impersonates Administrator against `cifs/DC02`, and that's where DA falls; full chain in [Section 19.6](#196-s4u-as-administrator-dcsync-flag07).)
+DC02 prints as `NONE` because nxc's anonymous SMB bind was refused — the forest blocks null-session enumeration (consistent with the `.eml` note that NTLM is disabled for domain auth in `westbridge-research.hsm`), so it has no name or domain to display. WEB prints normally because null-auth *is* allowed there. (We'll get our shell on DC02 later via S4U — the AES256 key exfiltrated from research-WEB's LSA secrets impersonates Administrator against `cifs/DC02`, and that's where DA falls; full chain in [Section 19.6](#19-6-s4u-as-administrator-dcsync-flag07).)
 
 ## 18.4 Cross-Realm Tickets — How the Trust Actually Works
 
@@ -3946,7 +3946,7 @@ rusthound-ce \
 
 > Forest trusts are like bridges: highly convenient for administrators, and absolutely devastating when the toll booth is left unguarded. Time to ladder up some group scopes.
 
-Recall the portal conversation ([Section 15.7](#157-looking-around--the-support-portal)): *"you need to change the group scope to Universal first, then to Domain Local."* Here's the full mechanics of what that chat was teaching, because this stage hides **two separate gotchas** — one about rights, one about scopes.
+Recall the portal conversation ([Section 15.7](#15-7-looking-around-the-support-portal)): *"you need to change the group scope to Universal first, then to Domain Local."* Here's the full mechanics of what that chat was teaching, because this stage hides **two separate gotchas** — one about rights, one about scopes.
 
 ### 18.5.1 Owner ≠ Writable — Grant Yourself GenericAll First
 
@@ -4293,14 +4293,14 @@ SMB         10.0.20.10      445    WEB              [+] Dumped 11 LSA secrets to
 
 ### 19.5.2 Read the Loot Table — Why WEB$ AES256 Matters
 
-The headline is the **AES256 key of `WEB$`** — and per the BloodHound graph, `WEB$` holds constrained-delegation rights toward the research DC itself. That combination is [Section 19.6](#196-s4u-as-administrator-dcsync-flag07)'s whole payload: *the machine key of an account trusted to impersonate users against `DC02`*. Machine keys don't rotate out from under you here either (`ad_maximum_machine_account_password_age = 0` pattern again — this time confirmed by the LSA dump carrying both the AES key and a plaintext hex password for WEB$).
+The headline is the **AES256 key of `WEB$`** — and per the BloodHound graph, `WEB$` holds constrained-delegation rights toward the research DC itself. That combination is [Section 19.6](#19-6-s4u-as-administrator-dcsync-flag07)'s whole payload: *the machine key of an account trusted to impersonate users against `DC02`*. Machine keys don't rotate out from under you here either (`ad_maximum_machine_account_password_age = 0` pattern again — this time confirmed by the LSA dump carrying both the AES key and a plaintext hex password for WEB$).
 
 But read the rest of that loot table too, because it's a small museum:
 
 | Loot | What it is | What it's worth |
 |---|---|---|
 | `$DCC2$` entries ×3 | Domain cached credentials (MS-CACHE2) for a.howard, r.parker, j.bones | Crackable offline at `-m 2100`; we didn't need them |
-| **`WBRESEARCH\a.howard : fdCgRAxJq0lY`** | a.howard's **plaintext**, stored by whatever service cached it | A live identity in the research forest — its GenericWrite over `DC02$` is the designed path used in [Section 19.6](#196-s4u-as-administrator-dcsync-flag07) |
+| **`WBRESEARCH\a.howard : fdCgRAxJq0lY`** | a.howard's **plaintext**, stored by whatever service cached it | A live identity in the research forest — its GenericWrite over `DC02$` is the designed path used in [Section 19.6](#19-6-s4u-as-administrator-dcsync-flag07) |
 | `WEB$ plain_password_hex` | The research web server's own machine-account password, in hex | Full `WEB$` identity without Kerberos at all |
 
 Cached domain credentials on a web server are a pattern worth internalizing: anything that ever authenticated *as a domain user* through this box left residue, and local admin turns residue into identities.
@@ -4311,11 +4311,11 @@ Cached domain credentials on a web server are a pattern worth internalizing: any
 
 ### 19.6.1 RBCD on DC02$ via a.howard's GenericWrite
 
-`A.HOWARD` holds **GenericWrite over `DC02$`** — the lab's designed path into the research DC. The credential: `WBRESEARCH\a.howard : fdCgRAxJq0lY`, plaintext, leaked from [Section 19.5](#195-lsa-secrets-the-machine-that-owns-dc02)'s LSA dump (`RID 1113`). No crack.
+`A.HOWARD` holds **GenericWrite over `DC02$`** — the lab's designed path into the research DC. The credential: `WBRESEARCH\a.howard : fdCgRAxJq0lY`, plaintext, leaked from [Section 19.5](#19-5-lsa-secrets-the-machine-that-owns-dc02)'s LSA dump (`RID 1113`). No crack.
 
 Delegation triangle, fully assembled:
 - **a.howard** — `GenericWrite` on `DC02$`'s `msDS-AllowedToActOn-Behalf-Other-Identity`
-- **WEB$** — AES256 key from [Section 19.5](#195-lsa-secrets-the-machine-that-owns-dc02); principal we authenticate as (no password)
+- **WEB$** — AES256 key from [Section 19.5](#19-5-lsa-secrets-the-machine-that-owns-dc02); principal we authenticate as (no password)
 - **DC02$** — `cifs` target we want as Administrator
 
 One bloodyAD call writes the ACE. Same primitive as the FILES hop earlier, one forest over:
@@ -4467,7 +4467,7 @@ Flag07[DC_XXXXX_XXXXXXX_C0mplete]
 
 # Appendix A: The SeImpersonate Potato — CrystalPotato
 
-Both of Westbridge's Windows `SYSTEM` hops — SQL ([Section 9.6](#96-system-on-sql)) and the research web server ([Section 19.4](#194-webshell-crystalpotato-system)) — ran the same binary: **CrystalPotato**, a Rust port of [GodPotato](https://github.com/BeichenDream/GodPotato) (the `C#` original). The binary is a single EXE with no dependencies, and the lab used it twice with two different threat models — once where AV was off, once where Defender was on. This appendix unpacks the primitive, the tool, and both runs.
+Both of Westbridge's Windows `SYSTEM` hops — SQL ([Section 9.6](#9-6-system-on-sql)) and the research web server ([Section 19.4](#19-4-webshell-crystalpotato-system)) — ran the same binary: **CrystalPotato**, a Rust port of [GodPotato](https://github.com/BeichenDream/GodPotato) (the `C#` original). The binary is a single EXE with no dependencies, and the lab used it twice with two different threat models — once where AV was off, once where Defender was on. This appendix unpacks the primitive, the tool, and both runs.
 
 ## A.1 The primitive — `SeImpersonatePrivilege`
 
@@ -4492,7 +4492,7 @@ What it is *not*: it is **not** a memory-corruption exploit. There is no CVE, no
 
 ## A.3 Run 1 — SQL (`10.0.10.20`), no AV
 
-This is the [Section 9.6](#96-system-on-sql) hop in full. `xp_cmdshell` gave us a `westbridge\svc_mssql` shell; `whoami /priv` showed `SeImpersonatePrivilege: Enabled`. CrystalPotato was a clean, no-friction drop — the box had no Defender or third-party AV running, so the obfuscation layer was a nice-to-have, not a requirement.
+This is the [Section 9.6](#9-6-system-on-sql) hop in full. `xp_cmdshell` gave us a `westbridge\svc_mssql` shell; `whoami /priv` showed `SeImpersonatePrivilege: Enabled`. CrystalPotato was a clean, no-friction drop — the box had no Defender or third-party AV running, so the obfuscation layer was a nice-to-have, not a requirement.
 
 **Drop the binary** over the existing `svc_mssql` shell:
 
@@ -4521,7 +4521,7 @@ No output in the foreground — the binary execs and the child shell process is 
 
 ## A.4 Run 2 — research web (`10.0.20.10`), Defender enabled
 
-This is the [Section 19.4](#194-webshell-crystalpotato-system) hop. ASPX webshell dropped into `C:\inetpub\wwwroot` ran as `iis apppool\defaultapppool`; `whoami /priv` again showed `SeImpersonatePrivilege: Enabled`. **But** Defender was live on this box and had already flagged the first plain webshell upload — the post's lab note is explicit: "Defender on this box flagged the first plain webshell — the working copy was a lightly obfuscated variant." So the threat model here is *not* the same as SQL: the binary's evasion layer is the reason CrystalPotato was picked over the louder GodPotato original.
+This is the [Section 19.4](#19-4-webshell-crystalpotato-system) hop. ASPX webshell dropped into `C:\inetpub\wwwroot` ran as `iis apppool\defaultapppool`; `whoami /priv` again showed `SeImpersonatePrivilege: Enabled`. **But** Defender was live on this box and had already flagged the first plain webshell upload — the post's lab note is explicit: "Defender on this box flagged the first plain webshell — the working copy was a lightly obfuscated variant." So the threat model here is *not* the same as SQL: the binary's evasion layer is the reason CrystalPotato was picked over the louder GodPotato original.
 
 **Fetch over the ligolo tunnel** — the listener forwards port `7777` *on the DC agent* to the attacker's HTTP server, so the URL is the DC's `10.0.10.5:7777`, reachable from the research web box over the trust's routing:
 
@@ -4557,17 +4557,17 @@ CrystalPotato was the *last meter*, never the door. Both runs above happened **a
 
 ## Closing Thoughts
 
-This range is a masterclass in making a directory confess. The Flask bypass is a fun party trick, but the real lesson spans from [Section 6](#6-the-payoff--no-preauth-cross-principal-tgs-abuse) to [Section 19](#19-the-research-forest-falls): **a failed crack isn't a dead end — it's an attribute.** `svc_legacy`'s password surviving `rockyou` looked like a wall until you noticed what `UF_DONT_REQUIRE_PREAUTH` really buys: the KDC will impersonate that account on request, *for anyone*. One misconfigured flag became four TGS hashes — including `krbtgt`'s — and every stage after it ran the same play: find where a permission outlived its purpose (a deprecated vhost, a never-rotated keytab, a tombstoned Tier-3 admin, a writable certificate template, a group stuck mid-scope-conversion) and use it precisely.
+This range is a masterclass in making a directory confess. The Flask bypass is a fun party trick, but the real lesson spans from [Section 6](#6-the-payoff-no-preauth-cross-principal-tgs-abuse) to [Section 19](#19-the-research-forest-falls): **a failed crack isn't a dead end — it's an attribute.** `svc_legacy`'s password surviving `rockyou` looked like a wall until you noticed what `UF_DONT_REQUIRE_PREAUTH` really buys: the KDC will impersonate that account on request, *for anyone*. One misconfigured flag became four TGS hashes — including `krbtgt`'s — and every stage after it ran the same play: find where a permission outlived its purpose (a deprecated vhost, a never-rotated keytab, a tombstoned Tier-3 admin, a writable certificate template, a group stuck mid-scope-conversion) and use it precisely.
 
-Two techniques earn headline status on their own. The **silver ticket** ([Section 9](#9-pivot--the-hidden-sql-host)) turned "we can authenticate as `svc_mssql`" into "we are sysadmin" by writing a group RID into a PAC sealed with a key the domain had already handed us — no KDC contact, no IMPERSONATE grant, no humans involved until their own backup database surrendered one anyway. And **ESC4** ([Section 17](#17-privesc-dc01--esc4-on-the-ca)) proved AD CS is just a domain controller wearing a different hat: flip one bitmask bit on a writable template, enroll as Administrator via SAN, PKINIT for the real NT hash. The CA never malfunctioned; it issued exactly what the rewritten template told it to.
+Two techniques earn headline status on their own. The **silver ticket** ([Section 9](#9-pivot-the-hidden-sql-host)) turned "we can authenticate as `svc_mssql`" into "we are sysadmin" by writing a group RID into a PAC sealed with a key the domain had already handed us — no KDC contact, no IMPERSONATE grant, no humans involved until their own backup database surrendered one anyway. And **ESC4** ([Section 17](#17-privesc-dc01-esc4-on-the-ca)) proved AD CS is just a domain controller wearing a different hat: flip one bitmask bit on a writable template, enroll as Administrator via SAN, PKINIT for the real NT hash. The CA never malfunctioned; it issued exactly what the rewritten template told it to.
 
 ### The Anatomy of Muscle Memory
 
 The honest truth about why this chain fell apart so cleanly comes down to pattern recognition. Much of Westbridge wasn't solved by fresh deduction; it was solved by **reps**.
 
-* **The 21-byte `logonHours` clear** ([Section 15.4](#154-clearing-the-hours)) — overwriting the bitmap with `0xFF` to wake up a blocked account — was a direct reflex pulled straight from *Mirage* (HTB), where raw LDAP modification choked on WILL_NOT_PERFORM until you mirrored a clean baseline via PowerShell's `Set-ADUser`
-* **The scope ladder** ([Section 18.5](#185-group-type-abuse--ownership-is-not-permission)) — climbing Global ➜ Universal ➜ Domain Local because direct jumps fail — is a dance learned on *PingPong* (HTB), where cross-domain group management required the exact same sequence.
-* **The `ksu` + keytab trick** ([Section 14.5](#145-kerberos-as-the-privilege-escalation)) — minting an `root` principal, handing the ccache to setuid `ksu.mit`, and mapping it to local root — was carried over from GOAD variations like [*Dracarys*](https://secretmyth.blog/goad/goad-dracarys/#5-looting-syrax--own-the-machine-hit-a-wall), echoing the mechanics explored in my [*Cerberus in a File*](/kerberos/cerberus-in-a-file/) breakdown.
+* **The 21-byte `logonHours` clear** ([Section 15.4](#15-4-clearing-the-hours)) — overwriting the bitmap with `0xFF` to wake up a blocked account — was a direct reflex pulled straight from *Mirage* (HTB), where raw LDAP modification choked on WILL_NOT_PERFORM until you mirrored a clean baseline via PowerShell's `Set-ADUser`
+* **The scope ladder** ([Section 18.5](#18-5-group-type-abuse-ownership-is-not-permission)) — climbing Global ➜ Universal ➜ Domain Local because direct jumps fail — is a dance learned on *PingPong* (HTB), where cross-domain group management required the exact same sequence.
+* **The `ksu` + keytab trick** ([Section 14.5](#14-5-kerberos-as-the-privilege-escalation)) — minting an `root` principal, handing the ccache to setuid `ksu.mit`, and mapping it to local root — was carried over from GOAD variations like [*Dracarys*](https://secretmyth.blog/goad/goad-dracarys/#5-looting-syrax--own-the-machine-hit-a-wall), echoing the mechanics explored in my [*Cerberus in a File*](/kerberos/cerberus-in-a-file/) breakdown.
 
 That is the anomaly my blogs keep circling back to. Primitives are public, but the reflex isn't transferable in a dry documentation manual—only in reps. The scope ladder on `Research Web Operations` took seconds instead of minutes because *PingPong*'s `gMSA Managers` climb was recent enough muscle memory.
 

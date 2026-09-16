@@ -31,17 +31,22 @@ The title is a pun. The post is the five gears.
 An unintended architectural bypass skips the intended `stephen.m` pivot by using raw LDAP `modrdn` calls to physically drag a high-value account into a lower-tier OU and inherit container write access. From there, the killchain weaves through certificate forgery, defensive automation abuse, and session-key manipulation into a complete domain takeover.
 
 * [**Prologue — Skinning the Nemean Lion**](#prologue-skinning-the-nemean-lion-the-web-gate): Blind LDAP injection ➜ ASP.NET `machineKey` ticket forgery ➜ LibreOffice (`Bad-ODF`) client-side NTLM capture as `natalie.a`.
+
 * [**Strangling the Nemean Lion (The modrdn Maneuver)**](#labour-i-strangling-the-nemean-lion-the-modrdn-maneuver): Shadow Credentials on `bob.w` ➜ Abuse `WriteProperty` via `modrdn` to drag `Auditor` into `Web Department` ➜ Harvest inherited ACLs for a WinRM shell.
+
 * [**Racing the Hydra (The Dirty Nando Protocol)**](#labour-ii-racing-the-hydra-the-dirty-nando-protocol): Defeat an aggressive `aCleanup.ps1` scheduled task using a rapid-fire bash script to revive `fernando.r` and secure a persistent TGT before the automation sweeps the directory.
+
 * [**The Bureaucratic Maze (ESC3 Certificate Delegation)**](#labour-iii-the-bureaucratic-maze-esc3-certificate-delegation): Mint an ESC3 Enrollment Agent certificate as Fernando ➜ Issue a forged certificate for `ashley.b` via RPC/DCOM ➜ PKINIT authentication as IT Support.
+
 * [**Diverting the Rivers (Weaponizing the Janitor)**](#labour-iv-diverting-the-rivers-weaponizing-the-janitor): Staging `IT Support`'s `GenericAll` over the OU ➜ Trigger the cleanup task to clear `adminCount` from `IIS_Administrator` ➜ Reset `IIS_Administrator`'s password and then `IIS_WebServer$`'s machine account password.
+
 * [**Capturing Cerberus (Resource-Based Constrained Delegation)**](#labour-v-capturing-cerberus-resource-based-constrained-delegation): Overwrite `IIS_WebServer$`'s NT hash with its TGT session key ➜ Request an SPN-less S4U2proxy CIFS ticket via Kerberos U2U ➜ Domain Admin compromise.
 
 ---
 
 ## Prologue: Skinning the Nemean Lion (The Web Gate)
 
-> Full disclosure: I'm a novice at pretty much everything. While I picked up Windows AD mechanics quickly, my web exploitation skills are still a bit of a Greek tragedy. I view web applications as mildly annoying obstacle courses standing between me and `NTDS.dit`.
+> *Full disclosure: I'm a novice at pretty much everything. While I picked up Windows AD mechanics quickly, my web exploitation skills are still a bit of a Greek tragedy. I view web applications as mildly annoying obstacle courses standing between me and `NTDS.dit`.*
 
 The standard walkthrough for Hercules spends a lot of breath on the web tier. That's scaffolding. The real game begins the moment you touch the domain.
 
@@ -668,14 +673,9 @@ The `AdminCount` column is empty — the attribute has been cleared. The account
 
 With `adminCount` purged and inheritance restored, the inherited `GenericAll` rights from the container allow us to re-enable the target account and force an administrative password reset:
 
-* **`Enable-ADAccount`**: Clears the `ACCOUNTDISABLE` flag (0x0002) from `userAccountControl`, flipping the account status from disabled to active so it can authenticate and request Kerberos tickets.
-  * `-Identity`: Targets `IIS_Administrator` via its full Distinguished Name (DN) inside `OU=Forest Migration`.
-  * `-ErrorAction SilentlyContinue`: Suppresses non-terminating errors from cluttering the console output if the account is already enabled or if minor LDAP response delays occur.
+`Enable-ADAccount` clears the `ACCOUNTDISABLE` flag (`0x0002`) from `userAccountControl`, flipping the account from disabled to active.The full Distinguished Name targets the object precisely inside `OU=Forest Migration` to avoid any ambiguity across the directory.
 
-* **`Set-ADAccountPassword`**: Executes a password reset on the target object using our delegated Active Directory control.
-  * `-Identity`: Identifies the target account name (`IIS_Administrator`).
-  * `(ConvertTo-SecureString "SecretMyth123!" -AsPlainText -Force)`: Converts the raw password string into the `System.Security.SecureString` object required by the cmdlet. The `-Force` flag bypasses DPAPI encryption checks when handling plaintext in the pipeline.
-  * `-Reset`: Flags the operation as an administrative override rather than a user change. This forces the new password onto the account without requiring knowledge of the previous credential and bypasses password history or minimum age restrictions.
+`Set-ADAccountPassword` with `-Reset` is an administrative override —it bypasses password history, minimum age restrictions, and any requirement to know the previous credential. `ConvertTo-SecureString` with `-AsPlainText -Force` is just the PowerShell ceremony for passing a raw string where a `SecureString` object is expected. The `-Reset` flag is what matters: it says "this is an admin changing someone else's password," not "this is a user changing their own."
 
 ```powershell
 PS > Enable-ADAccount -Identity "CN=IIS_Administrator,OU=Forest Migration,OU=DCHERCULES,DC=hercules,DC=htb" -ErrorAction SilentlyContinue
@@ -839,7 +839,7 @@ The box reinforced what I keep coming back to: patching out legacy protocols is 
 
 ---
 
-### Remediation: Taming ESC3 and Restricting Kerberos Delegations
+## Remediation: Taming ESC3 and Restricting Kerberos Delegations
 
 ESC3 remediation is template-level: remove the Certificate Request Agent EKU from templates that don't need it, or restrict enrollment to authorized principals. The `EnrollmentAgent` template on Hercules had the EKU set without adequate scoping — any member of Smartcard Operators could mint a certificate that let them request certificates on behalf of anyone else. That's the ESC3 vulnerability in one sentence: the right to ask for someone else's certificate, without the right to be that someone else, is a delegation path waiting to be abused.
 

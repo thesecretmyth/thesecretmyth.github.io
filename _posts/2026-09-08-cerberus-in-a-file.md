@@ -16,13 +16,15 @@ wide: true
 
 ## Prologue: Adopting the Dog
 
-> Why spend a week trying to crack the master's password when you can just adopt the dog?
+> *Why spend a week trying to crack the master's password when you can just adopt the dog?*
 
 In an Active Directory environment, administrators go to great lengths to protect passwords. But on domain-joined Linux systems, those identities are often serialized directly to disk to allow for seamless service authentication. This is the credential that didn't ask permission.
 
 ## TL;DR
 
 A Kerberos keytab isn't a temporary session token. It is a plaintext-equivalent domain identity, serialized to a file, that mints Ticket Granting Tickets (TGTs) forever. Here is exactly how it works, how to hunt for it, and the operational tooling you need to let it off the leash.
+
+---
 
 ## 1. The Three-Headed Dog
 
