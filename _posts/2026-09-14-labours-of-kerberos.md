@@ -28,8 +28,6 @@ The title is a pun. The post is the five gears.
 
 ## TL;DR: The Attack Path
 
-An unintended architectural bypass skips the intended `stephen.m` pivot by using raw LDAP `modrdn` calls to physically drag a high-value account into a lower-tier OU and inherit container write access. From there, the killchain weaves through certificate forgery, defensive automation abuse, and session-key manipulation into a complete domain takeover.
-
 * [**Prologue — Skinning the Nemean Lion**](#prologue-skinning-the-nemean-lion-the-web-gate): Blind LDAP injection ➜ ASP.NET `machineKey` ticket forgery ➜ LibreOffice (`Bad-ODF`) client-side NTLM capture as `natalie.a`.
 
 * [**Strangling the Nemean Lion (The modrdn Maneuver)**](#labour-i-strangling-the-nemean-lion-the-modrdn-maneuver): Shadow Credentials on `bob.w` ➜ Abuse `WriteProperty` via `modrdn` to drag `Auditor` into `Web Department` ➜ Harvest inherited ACLs for a WinRM shell.
